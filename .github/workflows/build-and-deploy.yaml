@@ -28,6 +28,11 @@ jobs:
           cache: 'npm'
           cache-dependency-path: './src/nando-scheduler-app/package.json'
           
+      - name: Create .env file
+        run: |
+          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" >> ./src/nando-scheduler-app/.env
+          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> ./src/nando-scheduler-app/.env
+
       - name: Install Dependencies
         working-directory: ./src/nando-scheduler-app
         run: npm ci
