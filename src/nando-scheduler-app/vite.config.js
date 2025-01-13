@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { resolve } from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -9,8 +10,8 @@ export default defineConfig({
     outDir: 'dist',
     rollupOptions: {
       input: {
-        main: '/index.html',
-        '404': '/404.html'
+        main: resolve(__dirname, 'index.html'),
+        '404': resolve(__dirname, 'public/404.html')
       }
     }
   }
