@@ -7,18 +7,26 @@ import { useToast } from '../../ToastContext';
 function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const { addToast } = useToast(); // Extract addToast from the context object
   const navigate = useNavigate();
 
   const handleForgotPassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
-    if (error) {
-      setError(error.message);
-      addToast(error.message, 'error');
-    } else {
-      addToast('Check your email for the password reset link.', 'success');
-      navigate('/login');
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback`
+      });
+      if (error) {
+        setError(error.message);
+        addToast(error.message, 'error');
+      } else {
+        addToast('Check your email for the password reset link.', 'success');
+        navigate('/login');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -42,8 +50,17 @@ function ForgotPassword() {
               />
             </Form.Group>
             {error && <Alert variant="danger">{error}</Alert>}
-            <Button type="submit" className="w-100 mb-3">
-              <i className="fas fa-paper-plane me-2"></i>Send Reset Link
+            <Button type="submit" className="w-100 mb-3" disabled={loading}>
+              {loading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-paper-plane me-2"></i>Send Reset Link
+                </>
+              )}
             </Button>
           </Form>
           <div className="d-flex justify-content-center">

@@ -10,11 +10,13 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { addToast } = useToast();
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const { error, data } = await supabase.auth.signInWithPassword({ 
         email, 
@@ -32,6 +34,8 @@ const Login: React.FC = () => {
       const authError = err as AuthError;
       setError(authError.message);
       addToast('An error occurred', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -65,8 +69,17 @@ const Login: React.FC = () => {
               />
             </Form.Group>
             {error && <Alert variant="danger">{error}</Alert>}
-            <Button type="submit" className="w-100 mb-3">
-              <i className="fas fa-sign-in-alt me-2"></i>Login
+            <Button type="submit" className="w-100 mb-3" disabled={loading}>
+              {loading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Logging in...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-sign-in-alt me-2"></i>Login
+                </>
+              )}
             </Button>
           </Form>
           <div className="d-flex justify-content-between">
