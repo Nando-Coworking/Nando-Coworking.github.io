@@ -1,3 +1,7 @@
+:root {
+  --transition-duration: 0.3s;
+}
+
 html, body {
   height: 100%;
   margin: 0;
@@ -7,7 +11,8 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #222222 !important;    
+  transition: background-color var(--transition-duration) ease,
+              color var(--transition-duration) ease;
 }
 
 #root {
@@ -22,14 +27,39 @@ body {
   flex: 1 0 auto;
   display: flex;
   flex-direction: column;
-  background-color: #ffffff !important;      
+  /* background-color: #ffffff !important;       */
 }
 
 footer {
   margin-top: auto;
-  background-color: #7d7d7d;
-  color: #cccccc;
+  background-color: var(--bs-secondary-bg);
+  color: var(--bs-secondary-color);
   font-size: .7em;
   text-align: center;
   padding-top: 15px;
+  transition: background-color var(--transition-duration) ease,
+              color var(--transition-duration) ease;
+}
+
+/* Theme transitions for all relevant elements */
+.navbar,
+.card,
+.btn,
+.form-control {
+  transition: background-color var(--transition-duration) ease,
+              border-color var(--transition-duration) ease,
+              color var(--transition-duration) ease;
+}
+
+/* Ensure content is readable in dark mode */
+[data-bs-theme="dark"] {
+  --bs-body-color: #dee2e6;
+  --bs-body-bg: #212529;
+  color-scheme: dark;
+}
+
+[data-bs-theme="light"] {
+  --bs-body-color: #212529;
+  --bs-body-bg: #ffffff;
+  color-scheme: light;
 }

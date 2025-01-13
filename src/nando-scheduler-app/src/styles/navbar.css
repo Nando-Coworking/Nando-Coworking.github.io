@@ -1,0 +1,21 @@
+.navbar {
+  transition: all 0.8s ease;
+}
+
+.navbar-light-custom {
+  background: linear-gradient(180deg, #eeeeee 0%, #bbbbbb 100%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.navbar-dark-custom {
+  background: linear-gradient(180deg, #343a40 0%, #212529 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+[data-bs-theme="dark"] .navbar {
+  --bs-navbar-color: rgba(255, 255, 255, 0.75);
+  --bs-navbar-hover-color: rgba(255, 255, 255, 0.9);
+  --bs-navbar-active-color: #fff;
+}

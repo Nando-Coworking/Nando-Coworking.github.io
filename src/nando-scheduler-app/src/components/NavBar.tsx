@@ -1,14 +1,50 @@
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { useToast } from '../ToastContext';
-import LogoWide from '../assets/LogoWide_ForLight.png';
+import LogoForLight from '../assets/LogoWide_ForLight.png';
+import LogoForDark from '../assets/LogoWide_ForDark.png';
 import { Dropdown } from 'react-bootstrap';
+import Cookies from 'js-cookie';
 
 const Navbar: React.FC = () => {
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const navbarRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const updateTheme = () => {
+      const savedTheme = Cookies.get('theme') || 'auto';
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const shouldUseDark = savedTheme === 'dark' || (savedTheme === 'auto' && prefersDark);
+      setIsDarkMode(shouldUseDark);
+
+      if (navbarRef.current) {
+        navbarRef.current.className = `navbar navbar-expand-lg border-bottom ${
+          shouldUseDark ? 'navbar-dark bg-dark navbar-dark-custom' : 'navbar-light bg-light navbar-light-custom'
+        }`;
+        navbarRef.current.setAttribute('data-bs-theme', shouldUseDark ? 'dark' : 'light');
+      }
+    };
+
+    // Watch for cookie changes
+    const cookieInterval = setInterval(updateTheme, .100);
+    
+    // Watch for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    mediaQuery.addEventListener('change', updateTheme);
+
+    // Initial update
+    updateTheme();
+
+    // Cleanup
+    return () => {
+      clearInterval(cookieInterval);
+      mediaQuery.removeEventListener('change', updateTheme);
+    };
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -21,11 +57,16 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-secondary">
+    <nav 
+      className={`navbar navbar-expand-lg border-bottom ${
+        isDarkMode ? 'navbar-dark bg-dark navbar-dark-custom' : 'navbar-light bg-light navbar-light-custom'
+      }`}
+      data-bs-theme={isDarkMode ? 'dark' : 'light'}
+    >
       <div className="container">
         <Link className="navbar-brand d-flex align-items-center" to="/">
           <img
-            src={LogoWide}
+            src={isDarkMode ? LogoForDark : LogoForLight}
             alt="Nando Scheduler Logo"
             height="30"
             className="me-2"
@@ -93,9 +134,13 @@ const Navbar: React.FC = () => {
               </Dropdown>
             ) : (
               <div className="nav-item d-flex">
-                <Link className="nav-link text-light" to="/signup"><i className="fas fa-user-plus me-2"></i>Sign Up</Link>
-                <span className="nav-link text-dark">&nbsp;|&nbsp;</span>
-                <Link className="nav-link text-light" to="/login"><i className="fas fa-right-to-bracket me-2"></i>Login</Link>
+                <Link className="nav-link" to="/signup">
+                  <i className="fas fa-user-plus me-2"></i>Sign Up
+                </Link>
+                <span className="nav-link text-muted">&nbsp;|&nbsp;</span>
+                <Link className="nav-link" to="/login">
+                  <i className="fas fa-right-to-bracket me-2"></i>Login
+                </Link>
               </div>
             )}
           </div>

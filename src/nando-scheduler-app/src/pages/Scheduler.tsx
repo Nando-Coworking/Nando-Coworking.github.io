@@ -3,6 +3,7 @@ import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import crypto from 'crypto';
+import { Form } from 'react-bootstrap';
 
 // Move static data outside component
 const cityResources = {
@@ -164,33 +165,41 @@ const Scheduler: React.FC = () => {
   return (
     <>
       <h3>Scheduler</h3>
-      <p>
-        <label htmlFor="city">Select a location:&nbsp;</label>
-        <select id="city" value={selectedCity} onChange={handleCityChange}>
-          <option value="">Select a location...</option>
-          {Object.keys(cityResources).map((city) => (
-            <option key={city} value={city}>
-              {city}
-            </option>
-          ))}
-        </select>
-      </p>
-      <p>
-        <label htmlFor="resource">Select a resource:&nbsp;</label>
-        <select 
-          id="resource" 
-          value={selectedResource} 
-          onChange={handleResourceChange}
-          disabled={!selectedCity}
-        >
-          <option value="">Select a resource...</option>
-          {selectedCity && cityResources[selectedCity].map((resource) => (
-            <option key={resource} value={resource}>
-              {resource}
-            </option>
-          ))}
-        </select>
-      </p>
+      <Form className="mb-3">
+        <Form.Group className="mb-2">
+          <Form.Label htmlFor="city">Select a location:</Form.Label>
+          <Form.Select 
+            id="city" 
+            value={selectedCity} 
+            onChange={handleCityChange}
+          >
+            <option value="">Select a location...</option>
+            {Object.keys(cityResources).map((city) => (
+              <option key={city} value={city}>
+                {city}
+              </option>
+            ))}
+          </Form.Select>
+        </Form.Group>
+
+        <Form.Group className="mb-2">
+          <Form.Label htmlFor="resource">Select a resource:</Form.Label>
+          <Form.Select
+            id="resource"
+            value={selectedResource}
+            onChange={handleResourceChange}
+            disabled={!selectedCity}
+          >
+            <option value="">Select a resource...</option>
+            {selectedCity && cityResources[selectedCity].map((resource) => (
+              <option key={resource} value={resource}>
+                {resource}
+              </option>
+            ))}
+          </Form.Select>
+        </Form.Group>
+      </Form>
+
       <Calendar
         localizer={localizer}
         events={events}
