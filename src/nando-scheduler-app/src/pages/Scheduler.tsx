@@ -165,7 +165,7 @@ const Scheduler: React.FC = () => {
     <>
       <h3>Scheduler</h3>
       <p>
-        <label htmlFor="city">Choose a location:&nbsp;</label>
+        <label htmlFor="city">Select a location:&nbsp;</label>
         <select id="city" value={selectedCity} onChange={handleCityChange}>
           <option value="">Select a location...</option>
           {Object.keys(cityResources).map((city) => (
@@ -176,7 +176,7 @@ const Scheduler: React.FC = () => {
         </select>
       </p>
       <p>
-        <label htmlFor="resource">Choose a resource:&nbsp;</label>
+        <label htmlFor="resource">Select a resource:&nbsp;</label>
         <select 
           id="resource" 
           value={selectedResource} 
