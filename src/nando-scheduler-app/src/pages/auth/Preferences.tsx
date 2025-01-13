@@ -45,7 +45,7 @@ const Preferences: React.FC = () => {
 
   return (
     <Container className="mt-5">
-      <h1>Preferences</h1>
+      <h3>Preferences</h3>
       <Form>
         <Form.Group controlId="themeSelect">
           <Form.Label>Select Theme</Form.Label>

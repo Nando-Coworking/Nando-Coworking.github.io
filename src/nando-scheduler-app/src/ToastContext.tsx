@@ -2,6 +2,21 @@ import React, { createContext, useContext, useState, useCallback, ReactNode } fr
 import { Toast, ToastContainer } from 'react-bootstrap';
 import { FaCheckCircle, FaExclamationCircle, FaInfoCircle, FaTimesCircle } from 'react-icons/fa';
 
+const progressBarStyles = `
+  @keyframes countdown {
+    from { width: 100%; }
+    to { width: 0%; }
+  }
+
+  .toast-progress {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.7);
+    animation: countdown 6000ms linear forwards;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+  }
+`;
 
 interface ToastMessage {
   id: number;
@@ -54,13 +69,14 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   return (
     <ToastContext.Provider value={{ addToast }}>
       {children}
-      <ToastContainer position="top-end" className="p-3">
+      <style>{progressBarStyles}</style>
+      <ToastContainer position="bottom-start" className="p-3">
         {toasts.map((toast) => (
           <Toast
             key={toast.id}
             onClose={() => removeToast(toast.id)}
-            className={`d-flex align-items-center ${toastVariants[toast.variant].bg}`}
-            delay={3000}
+            className={`d-flex align-items-center ${toastVariants[toast.variant].bg} position-relative`}
+            delay={6000}
             autohide
           >
             <Toast.Header closeButton={false}>
@@ -69,6 +85,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
               <button type="button" className="btn-close" aria-label="Close" onClick={() => removeToast(toast.id)} />
             </Toast.Header>
             <Toast.Body>{toast.message}</Toast.Body>
+            <div className="toast-progress" />
           </Toast>
         ))}
       </ToastContainer>

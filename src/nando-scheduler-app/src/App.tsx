@@ -17,6 +17,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import 'font-awesome/css/font-awesome.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ChangePassword from './pages/auth/ChangePassword';
 
 export default function App() {
   return (
@@ -36,6 +38,9 @@ export default function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/preferences" element={<Preferences />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/change-password" element={<ChangePassword />} />
+              <Route path="*" element={<Home />} />
             </Routes>
           </div>
 

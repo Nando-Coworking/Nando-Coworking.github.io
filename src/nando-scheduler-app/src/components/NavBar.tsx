@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { useToast } from '../ToastContext';
 import LogoWide from '../assets/LogoWide_ForLight.png';
@@ -8,10 +8,12 @@ import { Dropdown } from 'react-bootstrap';
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const { addToast } = useToast();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
       await logout();
+      navigate('/');
       addToast('Successfully logged out', 'success');
     } catch (error) {
       addToast('Error logging out', 'error');
