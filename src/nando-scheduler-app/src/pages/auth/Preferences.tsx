@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Form, Button } from 'react-bootstrap';
+import { Container, Form, Button, Card } from 'react-bootstrap';
 import Cookies from 'js-cookie';
 import { useToast } from '../../ToastContext';
 import LogoForLight from '../../assets/LogoWide_ForLight.png';
@@ -37,14 +37,14 @@ const Preferences: React.FC = () => {
   const applyTheme = (selectedTheme: ThemeOption) => {
     const root = document.documentElement;
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
+
     // Determine if we should use dark mode
-    const shouldUseDark = selectedTheme === 'dark' || 
+    const shouldUseDark = selectedTheme === 'dark' ||
       (selectedTheme === 'auto' && prefersDark);
 
     // Remove existing theme classes
     document.body.classList.remove('bg-light', 'bg-dark');
-    
+
     // Apply new theme
     if (shouldUseDark) {
       document.body.classList.add('bg-dark');
@@ -85,37 +85,46 @@ const Preferences: React.FC = () => {
   };
 
   return (
-    <Container className="mt-5">
-      <h3><i className="fas fa-palette me-2"></i>Theme Preferences</h3>
+    <>
+      <h3 className="mb-0"><i className="fas fa-gear me-2"></i>Preferences</h3>
       <p className="text-muted mb-4" style={{ borderBottom: '#dddddd solid 1px' }}>
         Customize the appearance of the application.
       </p>
-      
-      <Form>
-        <Form.Group controlId="themeSelect">
-          <Form.Label>Color Theme</Form.Label>
-          <Form.Select 
-            value={theme} 
-            onChange={handleThemeChange}
-            className="mb-3"
-          >
-            <option value="auto">Auto (Use System Theme)</option>
-            <option value="light">Light Mode</option>
-            <option value="dark">Dark Mode</option>
-          </Form.Select>
-          <Form.Text className="text-muted">
-            Auto mode will automatically switch between light and dark themes based on your system preferences.
-          </Form.Text>
-        </Form.Group>
-        {/* <Button
+
+      <Container className="mt-5 d-flex justify-content-center">
+        <div style={{ width: '100%', maxWidth: '500px' }}>
+
+          <Card>
+            <Card.Body>
+              <Form>
+                <Form.Group controlId="themeSelect">
+                  <Form.Label><i className="fas fa-palette me-2"></i>Color Theme</Form.Label>
+                  <Form.Select
+                    value={theme}
+                    onChange={handleThemeChange}
+                    className="mb-3"
+                  >
+                    <option value="auto">Auto (Use System Theme)</option>
+                    <option value="light">Light Mode</option>
+                    <option value="dark">Dark Mode</option>
+                  </Form.Select>
+                  <Form.Text className="text-muted">
+                    Auto mode will automatically switch between light and dark themes based on your system preferences.
+                  </Form.Text>
+                </Form.Group>
+                {/* <Button
           variant="primary" 
           className="mt-3" 
           onClick={handleSavePreferences}
         >
           Save Preferences
         </Button> */}
-      </Form>
-    </Container>
+              </Form>
+            </Card.Body>
+          </Card>
+        </div>
+      </Container>
+    </>
   );
 };
 

@@ -1,11 +1,33 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Container, Card, Button } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../AuthContext';
 
 const Profile: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+
+  useEffect(() => {
+    if (params.get('passwordChanged') === 'true') {
+        // Add hidden form for password manager context
+        const form = document.createElement('form');
+        form.style.display = 'none';
+        form.innerHTML = `
+            <input type="text" name="username" autocomplete="username" value="${params.get('email') || ''}" />
+            <input type="password" name="password" autocomplete="current-password" />
+        `;
+        document.body.appendChild(form);
+        
+        // Clean up after password manager has a chance to detect it
+        setTimeout(() => {
+            document.body.removeChild(form);
+            // Clean up URL
+            window.history.replaceState({}, '', '/profile');
+        }, 3000);
+    }
+  }, []);
 
   return (
     <>
@@ -28,7 +50,7 @@ const Profile: React.FC = () => {
                     className="btn btn-primary"
                     onClick={() => navigate('/change-password')}
                   >
-                    Change Password &gt;
+                    Change Password<i className="fas fa-arrow-right ms-2"></i>
                   </Button>
                 </dd>
               </dl>

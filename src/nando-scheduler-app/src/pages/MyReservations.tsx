@@ -3,6 +3,8 @@ import { Container, Card, ListGroup, Spinner, Alert } from 'react-bootstrap';
 import { useAuth } from '../AuthContext';
 import { supabase } from '../supabaseClient';
 import moment from 'moment';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '../ToastContext';
 
 interface Reservation {
   id: string;
@@ -14,15 +16,22 @@ interface Reservation {
 
 const MyReservations: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { addToast } = useToast();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+
     const fetchReservations = async () => {
       try {
         if (!user) {
-          setError('No user found');
+          if (mounted) {
+            addToast('Please log in to view your reservations', 'warning');
+            navigate('/scheduler');
+          }
           return;
         }
 
@@ -32,19 +41,19 @@ const MyReservations: React.FC = () => {
           .eq('user_id', user.id)
           .order('start_time', { ascending: true });
 
-        if (error) {
-          throw error;
-        }
-
-        setReservations(data);
+        if (error) throw error;
+        if (mounted) setReservations(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        if (mounted) {
+          setError(err instanceof Error ? err.message : 'An error occurred');
+        }
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
     fetchReservations();
+    return () => { mounted = false; };
   }, [user]);
 
   const now = moment();
@@ -63,8 +72,8 @@ const MyReservations: React.FC = () => {
   );
 
   return (
-    <Container className="mt-5">
-      <h1 className="mb-4">My Reservations</h1>
+    <>
+      <h3 className="mb-4"><i className="fa-solid fa-calendar-check me-2"></i>My Reservations</h3>
       
       {loading && (
         <div className="d-flex justify-content-center align-items-center">
@@ -136,7 +145,7 @@ const MyReservations: React.FC = () => {
           </Card>
         </>
       )}
-    </Container>
+    </>
   );
 };
 

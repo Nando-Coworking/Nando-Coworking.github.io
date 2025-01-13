@@ -3,12 +3,15 @@ import { Container, Form, Button, Alert, Card } from 'react-bootstrap';
 import { supabase } from '../../supabaseClient';
 import { useToast } from '../../ToastContext';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../AuthContext';
 
 const ChangePassword: React.FC = () => {
+    const { user } = useAuth();
     const [password, setPassword] = useState<string>('');
     const [confirmPassword, setConfirmPassword] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
     const [isValid, setIsValid] = useState<boolean>(false);
+    const [loading, setLoading] = useState(false);
     const { addToast } = useToast();
     const navigate = useNavigate();
 
@@ -34,15 +37,25 @@ const ChangePassword: React.FC = () => {
         setIsValid(validatePassword(password, newConfirmPassword));
     };
 
-    const handleChangePassword = async (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const { error } = await supabase.auth.updateUser({ password });
-        if (error) {
-            setError(error.message);
-            addToast(error.message, 'error');
-        } else {
-            addToast('Password updated successfully.', 'success');
-            navigate('/profile');
+    const handleSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
+        setLoading(true);
+        try {
+            const { error } = await supabase.auth.updateUser({ password });
+            if (error) {
+                setError(error.message);
+                addToast('Failed to change password', 'error');
+            } else {
+                addToast('Password changed successfully', 'success');
+                // Add context for password manager
+                const successUrl = `/profile?email=${encodeURIComponent(user?.email || '')}&passwordChanged=true`;
+                navigate(successUrl);
+            }
+        } catch (err) {
+            setError('An unexpected error occurred');
+            addToast('Failed to change password', 'error');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -55,7 +68,14 @@ const ChangePassword: React.FC = () => {
 
             <Container className="mt-5 d-flex justify-content-center">
                 <div style={{ width: '100%', maxWidth: '500px' }}>
-                    <Form onSubmit={handleChangePassword}>
+                    <Form onSubmit={handleSubmit} autoComplete="on" id="change-password-form">
+                        <Form.Control
+                            type="email"
+                            value={user?.email || ''}
+                            readOnly
+                            autoComplete="username email"
+                            style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
+                        />
 
                         <Card>
                             <Card.Body>
@@ -66,6 +86,7 @@ const ChangePassword: React.FC = () => {
                                             <Form.Label>New Password</Form.Label>
                                             <Form.Control
                                                 type="password"
+                                                autoComplete="new-password"
                                                 value={password}
                                                 onChange={handlePasswordChange}
                                                 isValid={password.length > 0 && isValid}
@@ -74,9 +95,10 @@ const ChangePassword: React.FC = () => {
                                             />
                                         </Form.Group>
                                         <Form.Group className="mb-3" controlId="confirmPassword">
-                                            <Form.Label>Confirm Password</Form.Label>
+                                            <Form.Label>Confirm New Password</Form.Label>
                                             <Form.Control
                                                 type="password"
+                                                autoComplete="new-password"
                                                 value={confirmPassword}
                                                 onChange={handleConfirmPasswordChange}
                                                 isValid={confirmPassword.length > 0 && isValid}
@@ -127,9 +149,19 @@ const ChangePassword: React.FC = () => {
                                 <Button 
                                     type="submit" 
                                     variant="primary" 
-                                    disabled={!isValid}
+                                    disabled={!isValid || loading}
+                                    form="change-password-form"
                                 >
-                                    Change Password<i className="fas fa-save ms-2"></i>
+                                    {loading ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                            Changing Password...
+                                        </>
+                                    ) : (
+                                        <>
+                                            Change Password<i className="fas fa-save ms-2"></i>
+                                        </>
+                                    )}
                                 </Button>
                             </div>
                         </div>
