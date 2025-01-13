@@ -96,6 +96,8 @@ export default function App() {
               <Route path="/services" element={<Services />} />
               <Route path="/about" element={<About />} />
               <Route path="/scheduler" element={<Scheduler />} />
+              <Route path="/scheduler/:city" element={<Scheduler />} />
+              <Route path="/scheduler/:city/:resource" element={<Scheduler />} />
               <Route path="/myreservations" element={<MyReservations />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/login" element={<Login />} />

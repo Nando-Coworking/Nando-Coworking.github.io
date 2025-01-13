@@ -1,0 +1,120 @@
+/* Theme-aware calendar styles */
+.rbc-calendar {
+  color: var(--bs-body-color);
+  background-color: var(--bs-body-bg);
+  border-color: var(--bs-border-color);
+  transition: all var(--transition-duration) ease;
+}
+
+/* Header and toolbar */
+.rbc-toolbar {
+  color: var(--bs-body-color);
+}
+
+.rbc-toolbar button {
+  color: var(--bs-body-color);
+  background-color: var(--bs-secondary-bg);
+  border-color: var(--bs-border-color);
+}
+
+.rbc-toolbar button:hover {
+  background-color: var(--bs-tertiary-bg);
+}
+
+.rbc-toolbar button.rbc-active {
+  background-color: var(--bs-primary);
+  color: white;
+}
+
+/* Month view */
+.rbc-month-view {
+  border-color: var(--bs-border-color);
+}
+
+.rbc-month-row {
+  border-color: var(--bs-border-color);
+}
+
+.rbc-day-bg {
+  border-color: var(--bs-border-color);
+}
+
+/* Day/week view */
+.rbc-time-view {
+  border: 1px solid var(--bs-border-color);
+}
+
+.rbc-time-header {
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.rbc-timeslot-group {
+  border-top: 1px solid rgba(var(--bs-border-color-rgb), 0.15);
+}
+
+.rbc-time-content > * + * > * {
+  border-color: rgba(var(--bs-border-color-rgb), 0.15);
+}
+
+.rbc-time-content {
+  border-color: var(--bs-border-color);
+}
+
+.rbc-time-header-content {
+  border-left: 1px solid var(--bs-border-color);
+}
+
+.rbc-header + .rbc-header {
+  border-color: var(--bs-border-color);
+}
+
+.rbc-time-view .rbc-time-gutter {
+  border-right: 1px solid var(--bs-border-color);
+}
+
+.rbc-today .rbc-timeslot-group {
+  border-color: rgba(var(--bs-border-color-rgb), 0.2);
+}
+
+.rbc-time-content .rbc-time-column {
+  border-color: rgba(var(--bs-border-color-rgb), 0.15);
+}
+
+.rbc-time-content .rbc-day-slot {
+  border-right: 1px solid var(--bs-border-color);
+}
+
+/* Events */
+.rbc-event {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+
+.rbc-event.rbc-selected {
+  background-color: var(--bs-primary-rgb);
+}
+
+/* Off-range days */
+.rbc-off-range-bg {
+  background-color: var(--bs-tertiary-bg);
+}
+
+/* Today highlight */
+.rbc-today {
+  background-color: var(--bs-primary-bg-subtle);
+}
+
+/* Soften intra-hour gridlines */
+.rbc-time-content > * + * > *,
+.rbc-timeslot-group {
+  border-color: rgba(var(--bs-border-color-rgb), 0.2) !important;
+}
+
+/* Keep major day divisions at full opacity */
+.rbc-day-bg + .rbc-day-bg,
+.rbc-time-header-content,
+.rbc-time-view,
+.rbc-month-view,
+.rbc-month-row + .rbc-month-row {
+  border-color: var(--bs-border-color);
+}

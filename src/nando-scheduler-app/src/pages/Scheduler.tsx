@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import crypto from 'crypto';
 import { Form } from 'react-bootstrap';
+import '../styles/react-big-calendar.css';  // Update this import path
+import { useNavigate, useParams } from 'react-router-dom';
 
 // Move static data outside component
 const cityResources = {
@@ -129,12 +131,46 @@ const generateEvents = (startDate: Date, endDate: Date) => {
 };
 
 const Scheduler: React.FC = () => {
+  const { city, resource } = useParams();
+  const navigate = useNavigate();
   const localizer = momentLocalizer(moment);
+  const initialLoadRef = useRef(true);
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedResource, setSelectedResource] = useState('');
   const [events, setEvents] = useState([]);
 
-  // Remove cityEvents useMemo since we'll generate on demand
+  // Handle initial city param
+  useEffect(() => {
+    if (initialLoadRef.current && city) {
+      console.log('City effect:', { city });
+      const decodedCity = decodeURIComponent(city);
+      if (cityResources[decodedCity]) {
+        console.log('Setting city to:', decodedCity);
+        setSelectedCity(decodedCity);
+      } else {
+        console.log('Invalid city, navigating to /scheduler');
+        navigate('/scheduler');
+      }
+    }
+  }, [city]);
+
+  // Handle resource param after city is set
+  useEffect(() => {
+    if (initialLoadRef.current && selectedCity && resource) {
+      console.log('Resource effect:', { selectedCity, resource });
+      const decodedResource = decodeURIComponent(resource);
+      if (cityResources[selectedCity].includes(decodedResource)) {
+        console.log('Setting resource to:', decodedResource);
+        setSelectedResource(decodedResource);
+        setEvents(generateEventsForResource(decodedResource));
+      } else {
+        console.log('Invalid resource, navigating to city');
+        navigate(`/scheduler/${encodeURIComponent(selectedCity)}`);
+      }
+      initialLoadRef.current = false;
+    }
+  }, [selectedCity, resource]);
+
   const generateEventsForResource = (resource: string) => {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 45); // 45 days in the past
@@ -149,16 +185,30 @@ const Scheduler: React.FC = () => {
     setEvents([]);
   }, [selectedCity]);
 
+  // Regular city change (not from URL)
   const handleCityChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedCity(event.target.value);
+    initialLoadRef.current = false;
+    const newCity = event.target.value;
+    setSelectedCity(newCity);
+    setSelectedResource('');
+    setEvents([]);
+    
+    if (newCity) {
+      navigate(`/scheduler/${encodeURIComponent(newCity)}`);
+    } else {
+      navigate('/scheduler');
+    }
   };
 
   const handleResourceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newResource = event.target.value;
     setSelectedResource(newResource);
-    // Only generate events when both city and resource are selected
-    if (selectedCity && newResource) {
+    
+    if (newResource && selectedCity) {
       setEvents(generateEventsForResource(newResource));
+      navigate(`/scheduler/${encodeURIComponent(selectedCity)}/${encodeURIComponent(newResource)}`);
+    } else {
+      navigate(`/scheduler/${encodeURIComponent(selectedCity)}`);
     }
   };
 
