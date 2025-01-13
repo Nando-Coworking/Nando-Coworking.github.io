@@ -9,6 +9,8 @@ const cityResources = {
   'New York': ['Conf Rm 1 (Sm)', 'Conf Rm West (XL)', 'Office 1', 'Office 2'],
   'Los Angeles': ['Conf Rm A', 'Conf Rm B', 'Office A', 'Office B'],
   'Chicago': ['Conf Rm X', 'Conf Rm Y', 'Office X', 'Office Y'],
+  'Jays Aviary North': ['Office 1', 'Lounge', 'Cafeteria', 'Patio'],
+  'Mariner View South': ['East Office', 'West Lab', 'Conservatory', 'Lounge', 'Cafeteria', 'Patio'],
 };
 
 const isWeekend = (date: Date): boolean => {
@@ -163,9 +165,9 @@ const Scheduler: React.FC = () => {
     <>
       <h3>Scheduler</h3>
       <p>
-        <label htmlFor="city">Choose a city: </label>
+        <label htmlFor="city">Choose a location:&nbsp;</label>
         <select id="city" value={selectedCity} onChange={handleCityChange}>
-          <option value="">Select a city...</option>
+          <option value="">Select a location...</option>
           {Object.keys(cityResources).map((city) => (
             <option key={city} value={city}>
               {city}
@@ -174,7 +176,7 @@ const Scheduler: React.FC = () => {
         </select>
       </p>
       <p>
-        <label htmlFor="resource">Choose a resource: </label>
+        <label htmlFor="resource">Choose a resource:&nbsp;</label>
         <select 
           id="resource" 
           value={selectedResource} 
