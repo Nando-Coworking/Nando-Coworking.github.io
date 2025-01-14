@@ -34,7 +34,7 @@ export const SiteDetailsOffcanvas: React.FC<Props> = ({
 
   const fetchResources = async () => {
     if (!site) return;
-    
+
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -45,15 +45,15 @@ export const SiteDetailsOffcanvas: React.FC<Props> = ({
         `)
         .eq('site_id', site.id)
         .order('name');
-  
+
       if (error) throw error;
-      
+
       // Transform the data to include amenity count
       const resourcesWithCount = data.map(resource => ({
         ...resource,
         amenity_count: resource.amenity_count[0].count
       }));
-      
+
       setResources(resourcesWithCount);
     } catch (error) {
       console.error('Error fetching resources:', error);
@@ -164,23 +164,23 @@ export const SiteDetailsOffcanvas: React.FC<Props> = ({
                       </small>
                     </div>
                     <div className="d-flex gap-2">
-                      <Badge 
-                        bg="info" 
+                      <Badge
+                        bg="info"
                         text="dark"
                         className="rounded-pill fw-normal"
-                        style={{ 
-                          fontSize: '0.65em', 
+                        style={{
+                          fontSize: '0.65em',
                           padding: '0.35em 0.75em'
                         }}
                       >
                         <i className="fas fa-users me-1"></i>
                         {resource.max_occupants}
                       </Badge>
-                      <Badge 
-                        bg="success" 
+                      <Badge
+                        bg="success"
                         className="rounded-pill fw-normal"
-                        style={{ 
-                          fontSize: '0.65em', 
+                        style={{
+                          fontSize: '0.65em',
                           padding: '0.35em 0.75em'
                         }}
                       >
@@ -195,6 +195,16 @@ export const SiteDetailsOffcanvas: React.FC<Props> = ({
           </ListGroup.Item>
         </ListGroup>
       </Offcanvas.Body>
+      <div className="border-top mx-n3 px-3 py-3 mt-auto">
+        <div className="d-flex justify-content-end">
+          <Button
+            variant="light"
+            onClick={onHide}
+          >
+            <i className="fas fa-chevron-left me-2"></i>Back
+          </Button>
+        </div>
+      </div>
 
       <ResourceAddForm
         show={showAddResource}

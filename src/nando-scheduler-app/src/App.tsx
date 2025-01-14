@@ -100,7 +100,9 @@ export default function App() {
               <Route path="/scheduler" element={<Scheduler />} />
               <Route path="/scheduler/:city" element={<Scheduler />} />
               <Route path="/scheduler/:city/:resource" element={<Scheduler />} />
-              <Route path="/myreservations" element={<MyReservations />} />
+              <Route path="/myreservations" element={<MyReservations />}>
+                <Route path=":tab" element={<MyReservations />} />
+              </Route>
               <Route path="/signup" element={<Signup />} />
               <Route path="/login" element={<Login />} />
               <Route path="/profile" element={<Profile />} />

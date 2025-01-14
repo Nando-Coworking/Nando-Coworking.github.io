@@ -38,11 +38,11 @@ const generateEvents = (startDate: Date, endDate: Date) => {
   const events = [];
   const today = new Date();
   const currentWeek = Math.floor((today.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
-  
+
   // Add duration configuration
   const durations = [2, 4, 8]; // hours
   const weights = [0.5, 0.3, 0.2]; // 50% 2hr, 30% 4hr, 20% 8hr
-  
+
   const getRandomDuration = () => {
     const rand = getSecureRandom();
     let sum = 0;
@@ -56,7 +56,7 @@ const generateEvents = (startDate: Date, endDate: Date) => {
   const pastWeeks = 6;
   const futureWeeks = 2;
   const totalWeeks = pastWeeks + 1 + futureWeeks;
-  
+
   for (let week = 0; week < totalWeeks; week++) {
     let targetUtilization;
     if (week < pastWeeks || week === pastWeeks) {
@@ -68,7 +68,7 @@ const generateEvents = (startDate: Date, endDate: Date) => {
     const hoursPerDay = 9;
     const availableHoursPerWeek = hoursPerDay * 5;
     const targetHoursPerWeek = availableHoursPerWeek * targetUtilization;
-    
+
     // Track bookings per day
     const dayBookings = new Map([
       [1, 0], // Monday
@@ -77,44 +77,44 @@ const generateEvents = (startDate: Date, endDate: Date) => {
       [4, 0], // Thursday
       [5, 0]  // Friday
     ]);
-    
+
     let weeklyHoursBooked = 0;
     let attempts = 0;
-    
+
     while (weeklyHoursBooked < targetHoursPerWeek && attempts < 100) {
       attempts++;
-      
+
       // Find least booked days
       const minBookings = Math.min(...Array.from(dayBookings.values()));
       const availableDays = Array.from(dayBookings.entries())
         .filter(([_, hours]) => hours === minBookings)
         .map(([day]) => day);
-      
+
       // Randomly select from least booked days
       const dayIndex = Math.floor(getSecureRandom() * availableDays.length);
       const dayOfWeek = availableDays[dayIndex];
-      
+
       const currentDate = new Date(startDate);
       currentDate.setDate(currentDate.getDate() + (week * 7) + dayOfWeek);
-      
+
       if (isWeekend(currentDate) || (isToday(currentDate) && isWeekend(today))) {
         continue;
       }
 
       const duration = getRandomDuration();
       const maxStartHour = 17 - duration;
-      
+
       if (maxStartHour <= 8) continue;
-      
+
       const startHour = 8 + Math.floor(getSecureRandom() * (maxStartHour - 8));
-      
+
       const hasOverlap = events.some(event => {
         if (event.start.getDate() !== currentDate.getDate()) return false;
         const eventStartHour = event.start.getHours();
         const eventEndHour = event.end.getHours();
         return !(startHour >= eventEndHour || (startHour + duration) <= eventStartHour);
       });
-      
+
       if (!hasOverlap && (weeklyHoursBooked + duration <= targetHoursPerWeek)) {
         events.push({
           title: 'Reserved',
@@ -126,7 +126,7 @@ const generateEvents = (startDate: Date, endDate: Date) => {
       }
     }
   }
-  
+
   return events.sort((a, b) => a.start.getTime() - b.start.getTime());
 };
 
@@ -192,7 +192,7 @@ const Scheduler: React.FC = () => {
     setSelectedCity(newCity);
     setSelectedResource('');
     setEvents([]);
-    
+
     if (newCity) {
       navigate(`/scheduler/${encodeURIComponent(newCity)}`);
     } else {
@@ -203,7 +203,7 @@ const Scheduler: React.FC = () => {
   const handleResourceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newResource = event.target.value;
     setSelectedResource(newResource);
-    
+
     if (newResource && selectedCity) {
       setEvents(generateEventsForResource(newResource));
       navigate(`/scheduler/${encodeURIComponent(selectedCity)}/${encodeURIComponent(newResource)}`);
@@ -214,13 +214,16 @@ const Scheduler: React.FC = () => {
 
   return (
     <>
-      <h3>Scheduler</h3>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h3><i className="fas fa-calendar-days me-2"></i>Scheduler</h3>
+      </div>
+
       <Form className="mb-3">
         <Form.Group className="mb-2">
           <Form.Label htmlFor="city">Select a location:</Form.Label>
-          <Form.Select 
-            id="city" 
-            value={selectedCity} 
+          <Form.Select
+            id="city"
+            value={selectedCity}
             onChange={handleCityChange}
           >
             <option value="">Select a location...</option>

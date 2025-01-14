@@ -7,6 +7,14 @@ import LogoForDark from '../assets/LogoWide_ForDark.png';
 import { Dropdown } from 'react-bootstrap';
 import Cookies from 'js-cookie';
 
+// First add helper function for initials
+const getInitials = (email: string) => {
+  return email
+    .split('@')[0] // Get username part
+    .slice(0, 2) // Get first two chars
+    .toUpperCase();
+};
+
 const Navbar: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const navbarRef = useRef<HTMLDivElement>(null);
@@ -101,7 +109,7 @@ const Navbar: React.FC = () => {
             {user && (
               <li className="nav-item">
                 <Link className="nav-link" to="/groups">
-                  <i className="fas fa-users me-2"></i>Teams
+                  <i className="fas fa-users me-2"></i>Groups
                 </Link>
               </li>
             )}
@@ -112,24 +120,49 @@ const Navbar: React.FC = () => {
                 </Link>
               </li>
             )}
-            {/* <li className="nav-item">
+            <li className="nav-item">
               <Link className="nav-link" to="/about">
                 <i className="fa-solid fa-circle-question"></i>&nbsp;About Us
               </Link>
-            </li> */}
+            </li>
           </ul>
 
           <div className="d-flex align-items-center">
             {user ? (
               <Dropdown align="end">
-                <Dropdown.Toggle variant="link" className="nav-link text-light p-0">
-                  <img
-                    src={`https://www.gravatar.com/avatar/${user.email ? user.email.toLowerCase().trim() : ''}?d=mp&s=32`}
-                    alt="Profile"
-                    className="rounded-circle"
-                    width="32"
-                    height="32"
-                  />
+                <Dropdown.Toggle variant="link" className="nav-link d-flex align-items-center p-0">
+                  <div className="d-flex align-items-center">
+                    {user?.email ? (
+                      <div 
+                        className="d-flex align-items-center justify-content-center rounded-circle"
+                        style={{
+                          width: '32px',
+                          height: '32px',
+                          backgroundColor: '#6c757d',
+                          color: 'white',
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          marginRight: '4px'  // Add spacing between avatar and caret
+                        }}
+                        title={user.email}
+                      >
+                        {getInitials(user.email)}
+                      </div>
+                    ) : (
+                      <div 
+                        className="d-flex align-items-center justify-content-center rounded-circle"
+                        style={{
+                          width: '32px',
+                          height: '32px',
+                          backgroundColor: '#6c757d',
+                          color: 'white',
+                          marginRight: '4px'  // Add spacing between avatar and caret
+                        }}
+                      >
+                        <i className="fas fa-user"></i>
+                      </div>
+                    )}
+                  </div>
                 </Dropdown.Toggle>
                 <Dropdown.Menu>
                   <Dropdown.Item as={Link} to="/profile">

@@ -5,10 +5,76 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 
 const About: React.FC = () => {
   return (
-    <main style={{ padding: '2rem', fontFamily: 'sans-serif', lineHeight: '1.6' }}>
-      <h3 style={{ textAlign: 'center', marginBottom: '2rem' }}><i className="fa-solid fa-circle-question me-2"></i>About Nando Coworking</h3>
-      
-      <div className="container">
+    <main>
+      <h3><i className="fas fa-circle-question me-2"></i>About Us</h3>
+
+
+      {/* How It Works Section */}
+      <div className="container mb-5">
+        <h3 className="text-center mb-4">
+          <i className="fas fa-map me-2"></i>How It Works
+        </h3>
+        <div className="row">
+          <div className="col-md-6 mb-4">
+            <div className="card" style={{ padding: '1rem' }}>
+              <h4><i className="fas fa-users-gear me-2"></i>Groups & Members</h4>
+              <p>
+                Every user starts with their own group. As a group owner, you can:
+                <ul>
+                  <li>Invite others as admins or members</li>
+                  <li>Manage group settings and permissions</li>
+                  <li>Control access to resources</li>
+                </ul>
+              </p>
+            </div>
+          </div>
+          <div className="col-md-6 mb-4">
+            <div className="card" style={{ padding: '1rem' }}>
+              <h4><i className="fas fa-building me-2"></i>Create Sites</h4>
+              <p>
+                Sites are physical locations where coworking happens. Admins can:
+                <ul>
+                  <li>Set up new coworking locations</li>
+                  <li>Define site details and policies</li>
+                  <li>Manage site availability</li>
+                </ul>
+              </p>
+            </div>
+          </div>
+          <div className="col-md-6 mb-4">
+            <div className="card" style={{ padding: '1rem' }}>
+              <h4><i className="fas fa-box me-2"></i>Add Resources</h4>
+              <p>
+                Resources are bookable spaces within sites, such as:
+                <ul>
+                  <li>Offices and conference rooms</li>
+                  <li>Recreational areas (courts, patios)</li>
+                  <li>Specialized spaces</li>
+                </ul>
+              </p>
+            </div>
+          </div>
+          <div className="col-md-6 mb-4">
+            <div className="card" style={{ padding: '1rem' }}>
+              <h4><i className="fas fa-list-check me-2"></i>Resource Amenities</h4>
+              <p>
+                Each resource can have various amenities:
+                <ul>
+                  <li>Technology (WiFi, TV, projector)</li>
+                  <li>Climate control (AC, heating)</li>
+                  <li>Furniture and equipment</li>
+                </ul>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* About Section */}
+      <div className="container mb-5">
+        <h3 className="text-center mb-4">
+          <i className="fas fa-info-circle me-2"></i>About Us
+        </h3>
         <div className="row">
           <div className="col-md-6 mb-4">
             <div className="card" style={{ padding: '1rem' }}>
@@ -56,7 +122,7 @@ const About: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       <section style={{ textAlign: 'center', marginTop: '2rem' }}>
         <h3><i className="fa fa-users" aria-hidden="true"></i> Join Us</h3>
         <p>
@@ -65,12 +131,12 @@ const About: React.FC = () => {
           lasting value for all stakeholders.
         </p>
         <p>
-          
-          <button 
+
+          <button
             className="btn btn-primary" disabled>
             Navigate to Careers &gt;
           </button>
-           
+
         </p>
       </section>
     </main>

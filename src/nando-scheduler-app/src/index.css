@@ -63,3 +63,8 @@ footer {
   --bs-body-bg: #ffffff;
   color-scheme: light;
 }
+
+.border-dashed {
+  border-style: dashed !important;
+  background-color: rgba(0,0,0,.01) !important;
+}

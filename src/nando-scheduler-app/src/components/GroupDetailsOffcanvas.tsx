@@ -159,14 +159,14 @@ export const GroupDetailsOffcanvas: React.FC<Props> = ({
 
                 {canManageMembers(selectedGroup?.user_role) && (
                     <div className="d-flex justify-content-end mb-3">
-                    <Button
-                        variant="primary"
-                        onClick={onAddMemberClick}
-                        className="mt-0 justify-content-end"
-                    >
-                        <i className="fas fa-user-plus me-2"></i>
-                        Add Member<i className="fas fa-chevron-right ms-2"></i>
-                    </Button>
+                        <Button
+                            variant="primary"
+                            onClick={onAddMemberClick}
+                            className="mt-0 justify-content-end"
+                        >
+                            <i className="fas fa-user-plus me-2"></i>
+                            Add Member<i className="fas fa-chevron-right ms-2"></i>
+                        </Button>
                     </div>
                 )}
 
@@ -211,14 +211,14 @@ export const GroupDetailsOffcanvas: React.FC<Props> = ({
 
                 {canManageMembers(selectedGroup?.user_role) && (
                     <div className="d-flex justify-content-end mb-3">
-                    <Button
-                        variant="primary"
-                        onClick={onAddSite}
-                        className="mt-0 mb-3 justify-content-end"
-                    >
-                        <i className="fas fa-plus me-2"></i>
-                        Add Location<i className="fas fa-chevron-right ms-2"></i>
-                    </Button>
+                        <Button
+                            variant="primary"
+                            onClick={onAddSite}
+                            className="mt-0 mb-3 justify-content-end"
+                        >
+                            <i className="fas fa-plus me-2"></i>
+                            Add Location<i className="fas fa-chevron-right ms-2"></i>
+                        </Button>
                     </div>
                 )}
 
@@ -252,6 +252,16 @@ export const GroupDetailsOffcanvas: React.FC<Props> = ({
                     />
                 )}
             </Offcanvas.Body>
+            <div className="border-top mx-n3 px-3 py-3 mt-auto">
+                <div className="d-flex justify-content-end">
+                    <Button
+                        variant="light"
+                        onClick={onHide}
+                    >
+                        <i className="fas fa-chevron-left me-2"></i>Back
+                    </Button>
+                </div>
+            </div>
         </Offcanvas>
     );
 };
