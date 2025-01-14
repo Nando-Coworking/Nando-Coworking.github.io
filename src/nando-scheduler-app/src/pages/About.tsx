@@ -6,7 +6,7 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 const About: React.FC = () => {
   return (
     <main style={{ padding: '2rem', fontFamily: 'sans-serif', lineHeight: '1.6' }}>
-      <h3 style={{ textAlign: 'center', marginBottom: '2rem' }}>About Nando Coworking</h3>
+      <h3 style={{ textAlign: 'center', marginBottom: '2rem' }}><i className="fa-solid fa-circle-question me-2"></i>About Nando Coworking</h3>
       
       <div className="container">
         <div className="row">
