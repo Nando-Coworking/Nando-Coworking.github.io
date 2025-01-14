@@ -20,6 +20,7 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ChangePassword from './pages/auth/ChangePassword';
 import Cookies from 'js-cookie';
+import Groups from './pages/Groups';
 
 // Add this function before the App component
 const applyTheme = (selectedTheme: 'auto' | 'light' | 'dark') => {
@@ -105,6 +106,7 @@ export default function App() {
               <Route path="/preferences" element={<Preferences />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/change-password" element={<ChangePassword />} />
+              <Route path="/groups" element={<Groups />} />
               <Route path="*" element={<Home />} />
             </Routes>
           </div>

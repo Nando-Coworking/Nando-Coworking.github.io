@@ -98,6 +98,7 @@ DROP TABLE IF EXISTS public.groups CASCADE;
 CREATE TABLE public.groups (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     name varchar(255) NOT NULL,
+    description text,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now()
 );
@@ -130,6 +131,34 @@ AS $$
       AND user_id = _uid
       AND role IN ('owner','admin')
   );
+$$;
+
+-- Add this after the is_group_admin function and before the policies
+
+-- Function to create a group and make creator the owner
+CREATE OR REPLACE FUNCTION create_group_with_owner(
+  _name varchar,
+  _description text,
+  _user_id uuid
+) RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  _group_id uuid;
+BEGIN
+  -- Insert the group
+  INSERT INTO groups (name, description)
+  VALUES (_name, _description)
+  RETURNING id INTO _group_id;
+
+  -- Make the creator an owner
+  INSERT INTO group_users (group_id, user_id, role)
+  VALUES (_group_id, _user_id, 'owner');
+
+  RETURN _group_id;
+END;
 $$;
 
 -- =====================================================
@@ -308,13 +337,34 @@ USING (
    )
 );
 
+-- First, drop existing policies
+DROP POLICY IF EXISTS "group_insert_policy" ON public.groups;
+DROP POLICY IF EXISTS "group_users_insert_policy" ON public.group_users;
+
+-- Modified groups insert policy - simpler and more permissive for creation
 CREATE POLICY "group_insert_policy"
 ON public.groups
 FOR INSERT
 TO authenticated
+WITH CHECK (false);  -- Force group creation through the function
+
+-- Modified group_users insert policy - allow self-insertion as owner
+CREATE POLICY "group_users_insert_policy"
+ON public.group_users
+FOR INSERT
+TO authenticated
 WITH CHECK (
-   -- For simplicity, let any authenticated user create a new group
-   true
+   -- Allow user to insert themselves as owner when creating group
+   (user_id = auth.uid() AND role = 'owner')
+   OR
+   -- OR allow existing group admins to add other users
+   EXISTS (
+     SELECT 1 
+     FROM public.group_users AS me
+     WHERE me.group_id = group_users.group_id
+       AND me.user_id = auth.uid()
+       AND me.role IN ('owner', 'admin')
+   )
 );
 
 CREATE POLICY "group_update_policy"
@@ -367,21 +417,6 @@ USING (
   OR is_group_admin(group_users.group_id, auth.uid())
 );
 
-CREATE POLICY "group_users_insert_policy"
-ON public.group_users
-FOR INSERT
-TO authenticated
-WITH CHECK (
-   -- user can add new members only if they're in the group as admin/owner
-   EXISTS (
-     SELECT 1 
-     FROM public.group_users AS me
-     WHERE me.group_id = group_users.group_id
-       AND me.user_id = auth.uid()
-       AND me.role IN ('owner', 'admin')
-   )
-);
-
 CREATE POLICY "group_users_update_policy"
 ON public.group_users
 FOR UPDATE
@@ -410,6 +445,10 @@ ON public.group_users
 FOR DELETE
 TO authenticated
 USING (
+   -- Allow users to remove themselves (except owners)
+   (user_id = auth.uid() AND role != 'owner')
+   OR
+   -- OR allow group admins to remove others  
    EXISTS (
      SELECT 1 
      FROM public.group_users AS me
@@ -815,4 +854,77 @@ AS $$
       AND user_id = _uid
       AND role IN ('owner','admin')
   );
+$$;
+
+DROP FUNCTION IF EXISTS get_user_id_by_email(_email text);
+
+CREATE OR REPLACE FUNCTION get_user_id_by_email(_email text)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  _user_id uuid;
+BEGIN
+  SELECT id INTO _user_id
+  FROM auth.users
+  WHERE email = _email;
+  
+  RETURN _user_id;
+END;
+$$;
+
+DROP FUNCTION IF EXISTS get_group_members(uuid);
+
+CREATE OR REPLACE FUNCTION get_group_members(_group_id uuid)
+RETURNS TABLE (
+  id uuid,
+  user_id uuid,
+  role varchar(50),
+  email varchar(255)
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    gu.id,
+    gu.user_id,
+    gu.role,
+    au.email
+  FROM group_users gu
+  JOIN auth.users au ON au.id = gu.user_id
+  WHERE gu.group_id = _group_id;
+END;
+$$;
+
+DROP FUNCTION IF EXISTS get_group_with_member_count(uuid);
+
+CREATE OR REPLACE FUNCTION get_group_with_member_count(_user_id uuid)
+RETURNS TABLE (
+  id uuid,
+  name varchar(255),
+  description text,
+  user_role varchar(50),
+  member_count bigint
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    g.id,
+    g.name,
+    g.description,
+    gu.role as user_role,
+    (SELECT COUNT(*) FROM group_users WHERE group_id = g.id) as member_count
+  FROM groups g
+  JOIN group_users gu ON g.id = gu.group_id
+  WHERE gu.user_id = _user_id;
+END;
 $$;

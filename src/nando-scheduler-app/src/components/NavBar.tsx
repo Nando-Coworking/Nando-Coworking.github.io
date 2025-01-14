@@ -100,6 +100,13 @@ const Navbar: React.FC = () => {
                 </Link>
               </li>
             )}
+            {user && (
+              <li className="nav-item">
+                <Link className="nav-link" to="/groups">
+                  <i className="fas fa-users me-2"></i>Groups
+                </Link>
+              </li>
+            )}
             <li className="nav-item">
               <Link className="nav-link" to="/about">
                 <i className="fa-solid fa-circle-question"></i>&nbsp;About Us
