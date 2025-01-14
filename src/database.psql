@@ -221,7 +221,7 @@ CREATE TABLE public.resource_amenities (
     name_override text,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
-    UNIQUE (resource_id, amenity_id)
+    UNIQUE (resource_id, amenity_id, name_override)
 );
 
 -- =====================================================
@@ -598,7 +598,7 @@ USING (
      JOIN public.group_users ON group_users.group_id = sites.group_id
      WHERE sites.id = resources.site_id
        AND group_users.user_id = auth.uid()
-       AND group_users.role IN ('owner')
+       AND group_users.role IN ('owner', 'admin')
    )
 );
 
@@ -930,3 +930,80 @@ BEGIN
   WHERE gu.user_id = _user_id;
 END;
 $$;
+
+
+-- Function to create default group for new user
+CREATE OR REPLACE FUNCTION create_default_group_for_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    _group_id uuid;
+BEGIN
+    -- Create default group
+    INSERT INTO groups (
+        name,
+        description
+    ) VALUES (
+        'My Default Group',
+        'Your personal default group'
+    ) RETURNING id INTO _group_id;
+
+    -- Make user the owner
+    INSERT INTO group_users (
+        group_id,
+        user_id,
+        role
+    ) VALUES (
+        _group_id,
+        NEW.id,
+        'owner'
+    );
+
+    RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+    -- Log error but don't prevent user creation
+    RAISE WARNING 'Failed to create default group for user %: %', NEW.id, SQLERRM;
+    RETURN NEW;
+END;
+$$;
+
+-- Drop existing trigger if it exists
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+-- Create trigger
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW
+    EXECUTE FUNCTION create_default_group_for_user();
+
+
+-- SAMPLE DATA --
+INSERT INTO public.amenities (name, description) VALUES
+('High-Speed WiFi', 'Enterprise-grade wireless internet access'),
+('Standing Desk', 'Height-adjustable desk for ergonomic working'),
+('Whiteboard', 'Wall-mounted whiteboard with markers'),
+('Conference Phone', 'Polycom conference phone for audio conferencing'),
+('Video Conference Setup', 'Camera, microphone, and display for video meetings'),
+('Coffee Machine', 'Professional-grade coffee maker'),
+('Mini Fridge', 'Small refrigerator for beverages and snacks'),
+('Power Strip', 'Surge-protected power strip with USB ports'),
+('Ergonomic Chair', 'Adjustable office chair with lumbar support'),
+('Natural Light', 'Workspace with windows and natural lighting'),
+('Private Room', 'Enclosed space for privacy and focused work'),
+('Air Conditioning', 'Climate-controlled environment'),
+('Ethernet Port', 'Hardwired internet connection'),
+ ('Monitor - Medium (20-27 in)', 'Resolutions: 1080p (Full HD), 1440p (QHD), or 4K (UHD)'),                                  
+ ('Monitor - Large (28-34 in)', 'Aspect Ratio: 16:9, 16:10, or ultrawide (21:9) Resolutions: 1440p (QHD), 4K (UHD), or 5K'), 
+ ('Monitor - Ultrawide (34-19 in)', 'Aspect Ratio: 21:9 or 32:9 Resolutions: 1440p (QHD) or 4K/5K (UHD)'),                   
+ ('Monitor - Extra Large (>50 in)', 'Aspect Ratio: 16:9 or 32:9 Resolutions: 4K, 5K, or 8K'),                                
+ ('Projector - Mounted', 'Video projector that is attached to the structure.'),                                               
+  ('Monitor - Small (<20 in)', 'Typical Sizes: 15", 19". Common Resolutions: 720p, 900p, 1080p'),                             
+ ('Projector - Portable', 'Video projector that is portable and able to display on different services in the space.'),       
+ ('Speakerphone', 'Landline connection to a wired speakerphone.'),                                                           
+ ('Printer - Laser (color)', 'Laser printer that is capable of printing in color.'),                                         
+ ('Printer - Laser (B&W)', 'Laser printer capable of printing in black and white.'),                                         
+ ('Fax Machine', 'A telephone-based facsimile (aka fax) machine.'),                                                          
+ ('Room with View', 'Includes a pleasant view indoors or outdoors.')

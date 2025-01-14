@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Offcanvas, Form, Button } from 'react-bootstrap';
 import { supabase } from '../supabaseClient';
 import { useToast } from '../ToastContext';
+import { useAuth } from '../AuthContext'; // Add this import
 import { Group } from '../types/group';
 
 interface Props {
@@ -17,6 +18,7 @@ export const GroupAddSite: React.FC<Props> = ({
     group,
     onSiteAdded
 }) => {
+    const { user } = useAuth(); // Add this hook
     const { addToast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
     const [formData, setFormData] = useState({
@@ -31,11 +33,44 @@ export const GroupAddSite: React.FC<Props> = ({
     });
     const [validated, setValidated] = useState(false);
 
+    // Add useEffect and state for groups
+    const [groups, setGroups] = useState<Group[]>([]);
+    const [selectedGroupId, setSelectedGroupId] = useState('');
+
+    useEffect(() => {
+        const fetchGroups = async () => {
+            try {
+                if (!user?.id) return; // Add this check
+                
+                const { data, error } = await supabase
+                    .rpc('get_group_with_member_count', {
+                        _user_id: user.id
+                    });
+
+                if (error) throw error;
+                setGroups(data.filter(g => ['owner', 'admin'].includes(g.user_role || '')));
+            } catch (error) {
+                console.error('Error fetching groups:', error);
+                addToast('Error fetching groups', 'error');
+            }
+        };
+
+        if (!group) { // Only fetch groups if no group was passed in
+            fetchGroups();
+        } else {
+            setSelectedGroupId(group.id);
+        }
+    }, [group, user]); // Add user to dependencies
+
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
         setValidated(true);
 
-        if (!group) return;
+        const groupId = group?.id || selectedGroupId;
+        if (!groupId) {
+            addToast('Please select a group', 'error');
+            return;
+        }
 
         // Validate mandatory fields
         if (!formData.name || !formData.city || !formData.state) {
@@ -49,7 +84,7 @@ export const GroupAddSite: React.FC<Props> = ({
                 .from('sites')
                 .insert([{
                     ...formData,
-                    group_id: group.id,
+                    group_id: groupId,
                     slug_name: formData.name.toLowerCase().replace(/\s+/g, '-')
                 }]);
 
@@ -84,12 +119,37 @@ export const GroupAddSite: React.FC<Props> = ({
                         <i className="fas fa-building me-2"></i>Add Location
                     </Offcanvas.Title>
                     <div className="text-muted" style={{ fontSize: '0.85em' }}>
-                        Add a new location to {group?.name}
+                        {group ? 
+                            `Add a new location to ${group.name}` : 
+                            'Add a new location to one of your groups'
+                        }
                     </div>
                 </div>
             </Offcanvas.Header>
             <Offcanvas.Body>
                 <Form noValidate validated={validated} onSubmit={handleSubmit}>
+                    {!group && (
+                        <Form.Group className="mb-3">
+                            <Form.Label>Group <span className="text-danger">*</span></Form.Label>
+                            <Form.Select
+                                value={selectedGroupId}
+                                onChange={(e) => setSelectedGroupId(e.target.value)}
+                                required
+                                isInvalid={validated && !selectedGroupId}
+                            >
+                                <option value="">Select a group...</option>
+                                {groups.map(g => (
+                                    <option key={g.id} value={g.id}>
+                                        {g.name}
+                                    </option>
+                                ))}
+                            </Form.Select>
+                            <Form.Control.Feedback type="invalid">
+                                Please select a group.
+                            </Form.Control.Feedback>
+                        </Form.Group>
+                    )}
+
                     <Form.Group className="mb-3">
                         <Form.Label>Name <span className="text-danger">*</span></Form.Label>
                         <Form.Control

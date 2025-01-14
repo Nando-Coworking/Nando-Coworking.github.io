@@ -22,16 +22,15 @@ const Navbar: React.FC = () => {
       setIsDarkMode(shouldUseDark);
 
       if (navbarRef.current) {
-        navbarRef.current.className = `navbar navbar-expand-lg border-bottom ${
-          shouldUseDark ? 'navbar-dark bg-dark navbar-dark-custom' : 'navbar-light bg-light navbar-light-custom'
-        }`;
+        navbarRef.current.className = `navbar navbar-expand-lg border-bottom ${shouldUseDark ? 'navbar-dark bg-dark navbar-dark-custom' : 'navbar-light bg-light navbar-light-custom'
+          }`;
         navbarRef.current.setAttribute('data-bs-theme', shouldUseDark ? 'dark' : 'light');
       }
     };
 
     // Watch for cookie changes
     const cookieInterval = setInterval(updateTheme, .100);
-    
+
     // Watch for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     mediaQuery.addEventListener('change', updateTheme);
@@ -57,10 +56,9 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <nav 
-      className={`navbar navbar-expand-lg border-bottom ${
-        isDarkMode ? 'navbar-dark bg-dark navbar-dark-custom' : 'navbar-light bg-light navbar-light-custom'
-      }`}
+    <nav
+      className={`navbar navbar-expand-lg border-bottom ${isDarkMode ? 'navbar-dark bg-dark navbar-dark-custom' : 'navbar-light bg-light navbar-light-custom'
+        }`}
       data-bs-theme={isDarkMode ? 'dark' : 'light'}
     >
       <div className="container">
@@ -103,15 +101,22 @@ const Navbar: React.FC = () => {
             {user && (
               <li className="nav-item">
                 <Link className="nav-link" to="/groups">
-                  <i className="fas fa-users me-2"></i>Groups
+                  <i className="fas fa-users me-2"></i>Teams
                 </Link>
               </li>
             )}
-            <li className="nav-item">
+            {user && (
+              <li className="nav-item">
+                <Link className="nav-link" to="/sites">
+                  <i className="fas fa-building me-2"></i>Sites
+                </Link>
+              </li>
+            )}
+            {/* <li className="nav-item">
               <Link className="nav-link" to="/about">
                 <i className="fa-solid fa-circle-question"></i>&nbsp;About Us
               </Link>
-            </li>
+            </li> */}
           </ul>
 
           <div className="d-flex align-items-center">

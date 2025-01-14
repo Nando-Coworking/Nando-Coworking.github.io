@@ -18,6 +18,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, onManage }) => {
                 group.user_role === 'admin' ? 'warning' : 
                 'info'}
             text={group.user_role === 'owner' ? undefined : 'dark'}
+            className="fw-normal"
+            style={{ fontSize: '0.65em' }} 
           >
             <i className={`fas fa-${
               group.user_role === 'owner' ? 'power-off' : 
