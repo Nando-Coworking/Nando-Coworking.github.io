@@ -47,6 +47,15 @@ const Groups: React.FC = () => {
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [isSavingChanges, setIsSavingChanges] = useState(false);
 
+  // Add new state
+  const [showAddMember, setShowAddMember] = useState(false);
+
+  // Add new state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Update state
+  const [isDeletingGroup, setIsDeletingGroup] = useState(false);
+
   const fetchGroups = async () => {
     if (!user?.id) {
       setLoading(false);
@@ -223,12 +232,11 @@ const Groups: React.FC = () => {
     'member': 2
   };
 
-  // Add delete handler
+  // Update handler
   const handleDeleteGroup = async () => {
-    if (!selectedGroup || !window.confirm('Are you sure? This will delete all associated sites, resources, and reservations.')) {
-      return;
-    }
-
+    if (!selectedGroup) return;
+    setIsDeletingGroup(true);
+    
     try {
       const { error } = await supabase
         .from('groups')
@@ -238,11 +246,14 @@ const Groups: React.FC = () => {
       if (error) throw error;
       
       addToast('Group deleted successfully', 'success');
+      setShowDeleteConfirm(false);
       setShowGroupDetails(false);
       fetchGroups();
     } catch (error) {
       console.error('Error deleting group:', error);
       addToast('Error deleting group', 'error');
+    } finally {
+      setIsDeletingGroup(false);
     }
   };
 
@@ -541,26 +552,71 @@ const Groups: React.FC = () => {
 
           {/* Add member form - visible to owners and admins */}
           {canManageMembers(selectedGroup?.user_role) && (
-            <Form>
-              <Form.Group className="mb-3">
-                <Form.Label>Add Member</Form.Label>
-                <Form.Control
-                  type="email"
-                  placeholder="Enter email"
-                  value={newEmail}
-                  onChange={e => setNewEmail(e.target.value)}
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Role</Form.Label>
-                <Form.Select
-                  value={newRole}
-                  onChange={e => setNewRole(e.target.value)}
+            <Button 
+              variant="primary"
+              onClick={() => setShowAddMember(true)}
+              className="mt-3"
+            >
+              <i className="fas fa-plus me-2"></i>
+              Add Member
+            </Button>
+          )}
+
+          {/* Danger zone - only for owners */}
+          {isOwner(selectedGroup?.user_role) && (
+            <>
+              <hr className="my-4 border-danger" />
+              <div className="mt-4">
+                <Button 
+                  variant="outline-danger"
+                  onClick={() => setShowDeleteConfirm(true)}
                 >
-                  <option value="member">Member</option>
-                  <option value="admin">Admin</option>
-                </Form.Select>
-              </Form.Group>
+                  <i className="fas fa-trash-alt me-2"></i>
+                  Delete Group
+                </Button>
+              </div>
+            </>
+          )}
+        </Offcanvas.Body>
+      </Offcanvas>
+
+      {/* Add Member Offcanvas */}
+      <Offcanvas 
+        show={showAddMember} 
+        onHide={() => setShowAddMember(false)}
+        placement="end"
+      >
+        <Offcanvas.Header closeButton>
+          <Offcanvas.Title>Add Member to {selectedGroup?.name}</Offcanvas.Title>
+        </Offcanvas.Header>
+        <Offcanvas.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                placeholder="Enter email"
+                value={newEmail}
+                onChange={e => setNewEmail(e.target.value)}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Role</Form.Label>
+              <Form.Select
+                value={newRole}
+                onChange={e => setNewRole(e.target.value)}
+              >
+                <option value="member">Member</option>
+                <option value="admin">Admin</option>
+              </Form.Select>
+            </Form.Group>
+            <div className="d-flex justify-content-end gap-2 mt-4">
+              <Button 
+                variant="light"
+                onClick={() => setShowAddMember(false)}
+              >
+                Cancel
+              </Button>
               <Button 
                 onClick={handleAddUser}
                 disabled={isAddingMember}
@@ -574,32 +630,101 @@ const Groups: React.FC = () => {
                   'Add Member'
                 )}
               </Button>
-            </Form>
-          )}
+            </div>
+          </Form>
+        </Offcanvas.Body>
+      </Offcanvas>
 
-          {/* Danger zone - only for owners */}
-          {isOwner(selectedGroup?.user_role) && (
-            <>
-              <hr className="my-4 border-danger" />
-              <div className="mt-4">
-                <h5 className="text-danger">
-                  <i className="fas fa-exclamation-triangle me-2"></i>
-                  Danger Zone
-                </h5>
-                <p className="text-muted small">
-                  Deleting this group will permanently remove all associated sites, 
-                  resources, and reservations. This action cannot be undone.
-                </p>
-                <Button 
-                  variant="outline-danger"
-                  onClick={handleDeleteGroup}
+      {/* Add new Delete Confirmation Offcanvas */}
+      <Offcanvas 
+        show={showDeleteConfirm} 
+        onHide={() => setShowDeleteConfirm(false)}
+        placement="end"
+      >
+        <Offcanvas.Header closeButton>
+          <Offcanvas.Title className="text-danger">
+            <i className="fas fa-exclamation-triangle me-2"></i>
+            Delete Group?
+          </Offcanvas.Title>
+        </Offcanvas.Header>
+        <Offcanvas.Body>
+          {/* Group Info */}
+          <div className="mb-4">
+            <h5>{selectedGroup?.name}</h5>
+            <p className="text-muted">{selectedGroup?.description}</p>
+          </div>
+
+          {/* Members List */}
+          <div className="mb-4">
+            <h6>Current Members:</h6>
+            <ListGroup variant="flush" className="mb-3">
+              {groupUsers.map(groupUser => (
+                <ListGroup.Item 
+                  key={groupUser.id}
+                  className="px-0 d-flex justify-content-between align-items-center"
                 >
+                  <div>
+                    <div>{groupUser.email}</div>
+                    <Badge 
+                      bg={groupUser.role === 'owner' ? 'primary' : 
+                          groupUser.role === 'admin' ? 'warning' : 
+                          'info'}
+                      text={groupUser.role === 'owner' ? undefined : 'dark'}
+                    >
+                      <i className={`fas fa-${
+                        groupUser.role === 'owner' ? 'power-off' : 
+                        groupUser.role === 'admin' ? 'lock' : 
+                        'user'
+                      } me-1`}></i>
+                      {groupUser.role}
+                    </Badge>
+                  </div>
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          </div>
+
+          {/* Warning Section */}
+          <Alert variant="danger">
+            <i className="fas fa-exclamation-circle me-2"></i>
+            This will permanently delete:
+            <ul className="mb-0 mt-2">
+              <li>All {groupUsers.length} members and their roles</li>
+              <li>All associated sites</li>
+              <li>All associated resources</li>
+              <li>All reservations for those resources</li>
+            </ul>
+          </Alert>
+          <p className="text-muted small mt-3">
+            This action cannot be undone.
+          </p>
+
+          {/* Action Buttons */}
+          <div className="d-flex justify-content-end gap-2 mt-4">
+            <Button 
+              variant="light"
+              onClick={() => setShowDeleteConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="danger"
+              onClick={handleDeleteGroup}
+              disabled={isDeletingGroup}
+            >
+              {isDeletingGroup ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Deleting...
+                </>
+              ) : (
+                <>
                   <i className="fas fa-trash-alt me-2"></i>
-                  Delete Group
-                </Button>
-              </div>
-            </>
-          )}
+                  Yes, Delete Group
+                </>
+              )}
+            </Button>
+          </div>
         </Offcanvas.Body>
       </Offcanvas>
     </>
