@@ -19,12 +19,12 @@ export const GroupEditForm: React.FC<Props> = ({
 }) => {
     const { addToast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
+    const [validated, setValidated] = useState(false);
     const [formData, setFormData] = useState({
         name: group?.name || '',
         description: group?.description || ''
     });
 
-    // Update form data when group changes
     React.useEffect(() => {
         if (group) {
             setFormData({
@@ -34,9 +34,18 @@ export const GroupEditForm: React.FC<Props> = ({
         }
     }, [group]);
 
-    const handleUpdateGroup = async () => {
+    const handleSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
+        setValidated(true);
+
+        if (!formData.name || !formData.description) {
+            addToast('Name and description are required', 'error');
+            return;
+        }
+
         if (!group) return;
         setIsSaving(true);
+        
         try {
             const { error } = await supabase
                 .from('groups')
@@ -48,13 +57,13 @@ export const GroupEditForm: React.FC<Props> = ({
 
             if (error) throw error;
 
-            // Update the group object with new values before calling onGroupUpdated
             group.name = formData.name;
             group.description = formData.description;
 
             addToast('Group updated successfully', 'success');
             onGroupUpdated();
             onHide();
+            setValidated(false);
         } catch (error) {
             console.error('Error updating group:', error);
             addToast('Error updating group', 'error');
@@ -76,31 +85,45 @@ export const GroupEditForm: React.FC<Props> = ({
                 </div>
             </Offcanvas.Header>
             <Offcanvas.Body>
-                <Form>
+                <Form noValidate validated={validated} onSubmit={handleSubmit}>
                     <Form.Group className="mb-3">
-                        <Form.Label>Name</Form.Label>
+                        <Form.Label>Name <span className="text-danger">*</span></Form.Label>
                         <Form.Control
                             type="text"
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
+                            placeholder="Enter group name"
+                            required
+                            isInvalid={validated && !formData.name}
                         />
+                        <Form.Control.Feedback type="invalid">
+                            Please provide a name for the group.
+                        </Form.Control.Feedback>
                     </Form.Group>
+
                     <Form.Group className="mb-3">
-                        <Form.Label>Description</Form.Label>
+                        <Form.Label>Description <span className="text-danger">*</span></Form.Label>
                         <Form.Control
                             as="textarea"
                             rows={3}
                             value={formData.description}
                             onChange={e => setFormData({ ...formData, description: e.target.value })}
+                            placeholder="Enter group description"
+                            required
+                            isInvalid={validated && !formData.description}
                         />
+                        <Form.Control.Feedback type="invalid">
+                            Please provide a description for the group.
+                        </Form.Control.Feedback>
                     </Form.Group>
+
                     <div className="d-flex justify-content-end gap-2">
                         <Button variant="light" onClick={onHide}>
-                            <i className="fas fa-arrow-left me-2"></i>Back
+                            <i className="fas fa-chevron-left me-2"></i>Back
                         </Button>
                         <Button
                             variant="primary"
-                            onClick={handleUpdateGroup}
+                            type="submit"
                             disabled={isSaving}
                         >
                             {isSaving ? (

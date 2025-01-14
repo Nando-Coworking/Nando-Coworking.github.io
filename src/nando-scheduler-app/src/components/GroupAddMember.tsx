@@ -96,7 +96,7 @@ export const GroupAddMember: React.FC<Props> = ({
                             variant="light"
                             onClick={onHide}
                         >
-                            <i className="fas fa-arrow-left me-2"></i>Back
+                            <i className="fas fa-chevron-left me-2"></i>Back
                         </Button>
                         <Button
                             onClick={handleAddUser}

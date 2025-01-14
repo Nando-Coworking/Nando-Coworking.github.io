@@ -5,6 +5,7 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../AuthContext';
 import { useToast } from '../ToastContext';
 import { GroupMemberEdit } from './GroupMemberEdit';
+import { Site } from '../types/site';
 
 interface Props {
     show: boolean;
@@ -29,6 +30,11 @@ interface Props {
     rolePriority: Record<string, number>;
     onEditClick: () => void;
     onShowLeaveConfirm: () => void;
+
+    sites: Site[];
+    onAddSite: () => void;
+    onEditSite: (site: Site) => void;
+    onRemoveSite: (siteId: string) => Promise<void>;
 }
 
 export const GroupDetailsOffcanvas: React.FC<Props> = ({
@@ -47,7 +53,11 @@ export const GroupDetailsOffcanvas: React.FC<Props> = ({
     onLeaveGroup,
     rolePriority,
     onEditClick,
-    onShowLeaveConfirm
+    onShowLeaveConfirm,
+    sites = [],
+    onAddSite,
+    onEditSite,
+    onRemoveSite
 }) => {
     const { user } = useAuth();
     const canManageMembers = (role?: string) => ['owner', 'admin'].includes(role || '');
@@ -111,8 +121,8 @@ export const GroupDetailsOffcanvas: React.FC<Props> = ({
                                         text={groupUser.role === 'owner' ? undefined : 'dark'}
                                     >
                                         <i className={`fas fa-${groupUser.role === 'owner' ? 'power-off' :
-                                                groupUser.role === 'admin' ? 'lock' :
-                                                    'user'
+                                            groupUser.role === 'admin' ? 'lock' :
+                                                'user'
                                             } me-1`}></i>
                                         {groupUser.role}
                                     </Badge>
@@ -132,8 +142,8 @@ export const GroupDetailsOffcanvas: React.FC<Props> = ({
 
                                     {groupUser.user_id === user?.id ? (
                                         groupUser.role !== 'owner' && (
-                                            <Button 
-                                                variant="outline-warning" 
+                                            <Button
+                                                variant="outline-warning"
                                                 size="sm"
                                                 onClick={onShowLeaveConfirm}
                                             >
@@ -141,33 +151,78 @@ export const GroupDetailsOffcanvas: React.FC<Props> = ({
                                                 Leave Group
                                             </Button>
                                         )
-                                    ) : (
-                                        canManageMembers(selectedGroup?.user_role) &&
-                                        groupUser.role !== 'owner' && (
-                                            <Button
-                                                variant="outline-danger"
-                                                size="sm"
-                                                onClick={() => onRemoveUser(groupUser.user_id)}
-                                            >
-                                                <i className="fas fa-times"></i>
-                                            </Button>
-                                        )
-                                    )}
+                                    ) : false}
                                 </div>
                             </ListGroup.Item>
                         ))}
                 </ListGroup>
 
                 {canManageMembers(selectedGroup?.user_role) && (
+                    <div className="d-flex justify-content-end mb-3">
                     <Button
                         variant="primary"
                         onClick={onAddMemberClick}
-                        className="mt-3"
+                        className="mt-0 justify-content-end"
                     >
                         <i className="fas fa-user-plus me-2"></i>
-                        Add Member
+                        Add Member<i className="fas fa-chevron-right ms-2"></i>
                     </Button>
+                    </div>
                 )}
+
+                <h5 className="mt-4">
+                    <i className="fas fa-building me-2"></i>Locations
+                </h5>
+                <ListGroup className="mb-3">
+                    {sites.length === 0 ? (
+                        <ListGroup.Item className="text-muted">
+                            No locations added yet
+                        </ListGroup.Item>
+                    ) : (
+                        sites.map(site => (
+                            <ListGroup.Item
+                                key={site.id}
+                                className="d-flex justify-content-between align-items-center"
+                            >
+                                <div>
+                                    <div>{site.name}</div>
+                                    <small className="text-muted">
+                                        {site.city}, {site.state}
+                                    </small>
+                                </div>
+                                <div>
+                                    {canManageMembers(selectedGroup?.user_role) && (
+                                        <>
+                                            <Button
+                                                variant="outline-secondary"
+                                                size="sm"
+                                                onClick={() => onEditSite(site)}
+                                                className=""
+                                            >
+                                                <i className="fas fa-edit"></i>
+                                            </Button>
+                                        </>
+                                    )}
+                                </div>
+                            </ListGroup.Item>
+                        ))
+                    )}
+                </ListGroup>
+
+                {canManageMembers(selectedGroup?.user_role) && (
+                    <div className="d-flex justify-content-end mb-3">
+                    <Button
+                        variant="primary"
+                        onClick={onAddSite}
+                        className="mt-0 mb-3 justify-content-end"
+                    >
+                        <i className="fas fa-plus me-2"></i>
+                        Add Location<i className="fas fa-chevron-right ms-2"></i>
+                    </Button>
+                    </div>
+                )}
+
+
 
                 {isOwner(selectedGroup?.user_role) && (
                     <>
@@ -178,7 +233,7 @@ export const GroupDetailsOffcanvas: React.FC<Props> = ({
                                 onClick={onDeleteClick}
                             >
                                 <i className="fas fa-trash-alt me-2"></i>
-                                Delete Group
+                                Delete Group<i className="fas fa-chevron-right ms-2"></i>
                             </Button>
                         </div>
                     </>

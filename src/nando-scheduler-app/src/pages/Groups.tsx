@@ -1,4 +1,3 @@
-// src/pages/Groups.tsx
 import React, { useState, useEffect } from 'react';
 import { Container, Button, Card, Badge, Offcanvas, Form, ListGroup, Alert } from 'react-bootstrap';
 import { supabase } from '../supabaseClient';
@@ -10,8 +9,9 @@ import { GroupCreateForm } from '../components/GroupCreateForm';
 import { GroupAddMember } from '../components/GroupAddMember';
 import { GroupDetailsOffcanvas } from '../components/GroupDetailsOffcanvas';
 import { GroupEditForm } from '../components/GroupEditForm';
-// Add import
 import { GroupLeaveConfirmation } from '../components/GroupLeaveConfirmation';
+import { GroupAddSite } from '../components/GroupAddSite';
+import { GroupEditSite } from '../components/GroupEditSite';
 
 interface Group {
   id: string;
@@ -40,6 +40,10 @@ const Groups: React.FC = () => {
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState('member');
   const [isAddingMember, setIsAddingMember] = useState(false);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [showAddSite, setShowAddSite] = useState(false);
+  const [showEditSite, setShowEditSite] = useState(false);
+  const [selectedSite, setSelectedSite] = useState<Site | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -70,6 +74,7 @@ const Groups: React.FC = () => {
   // Add state for leave confirmation
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [isLeavingGroup, setIsLeavingGroup] = useState(false);
+
 
   const fetchGroups = async () => {
     if (!user?.id) {
@@ -112,6 +117,21 @@ const Groups: React.FC = () => {
       console.error('Error fetching group members:', error);
       addToast('Error fetching group members', 'error');
     }
+  };
+
+  const fetchSites = async (groupId: string) => {
+      try {
+          const { data, error } = await supabase
+              .from('sites')
+              .select('*')
+              .eq('group_id', groupId);
+  
+          if (error) throw error;
+          setSites(data);
+      } catch (error) {
+          console.error('Error fetching sites:', error);
+          addToast('Error fetching sites', 'error');
+      }
   };
 
   useEffect(() => {
@@ -195,14 +215,14 @@ const Groups: React.FC = () => {
         .single(); // Add this to get a single record
 
       if (error) throw error;
-      
+
       // Update the selected group in memory with the new values
       setSelectedGroup({
         ...selectedGroup,
         name: editingGroup.name,
         description: editingGroup.description
       });
-      
+
       addToast('Group updated successfully', 'success');
       fetchGroups();
     } catch (error) {
@@ -226,6 +246,7 @@ const Groups: React.FC = () => {
       description: group.description || ''
     });
     fetchGroupUsers(group.id);
+    fetchSites(group.id);
     setShowGroupDetails(true);
   };
 
@@ -240,7 +261,7 @@ const Groups: React.FC = () => {
   const handleDeleteGroup = async () => {
     if (!selectedGroup) return;
     setIsDeletingGroup(true);
-    
+
     try {
       const { error } = await supabase
         .from('groups')
@@ -248,7 +269,7 @@ const Groups: React.FC = () => {
         .eq('id', selectedGroup.id);
 
       if (error) throw error;
-      
+
       addToast('Group deleted successfully', 'success');
       setShowDeleteConfirm(false);
       setShowGroupDetails(false);
@@ -264,16 +285,16 @@ const Groups: React.FC = () => {
   // Add new handlers
   const handleRoleChange = async (userId: string, newRole: string) => {
     if (!selectedGroup) return;
-  
+
     try {
       const { error } = await supabase
         .from('group_users')
         .update({ role: newRole })
         .eq('group_id', selectedGroup.id)
         .eq('user_id', userId);
-  
+
       if (error) throw error;
-  
+
       addToast('Role updated successfully', 'success');
       fetchGroupUsers(selectedGroup.id);
       fetchGroups();
@@ -282,30 +303,49 @@ const Groups: React.FC = () => {
       addToast('Error updating role', 'error');
     }
   };
-  
+
   // Update handleLeaveGroup
   const handleLeaveGroup = async () => {
     if (!selectedGroup || !user?.id) return;
     setIsLeavingGroup(true);
-  
+
     try {
-        const { error } = await supabase
-            .from('group_users')
-            .delete()
-            .eq('group_id', selectedGroup.id)
-            .eq('user_id', user.id);
-  
-        if (error) throw error;
-  
-        addToast('Left group successfully', 'success');
-        setShowLeaveConfirm(false);
-        setShowGroupDetails(false);
-        fetchGroups();
+      const { error } = await supabase
+        .from('group_users')
+        .delete()
+        .eq('group_id', selectedGroup.id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      addToast('Left group successfully', 'success');
+      setShowLeaveConfirm(false);
+      setShowGroupDetails(false);
+      fetchGroups();
     } catch (error) {
-        console.error('Error leaving group:', error);
-        addToast('Error leaving group', 'error');
+      console.error('Error leaving group:', error);
+      addToast('Error leaving group', 'error');
     } finally {
-        setIsLeavingGroup(false);
+      setIsLeavingGroup(false);
+    }
+  };
+
+  // Add handler for removing sites
+  const handleRemoveSite = async (siteId: string) => {
+    if (!selectedGroup) return;
+    try {
+      const { error } = await supabase
+        .from('sites')
+        .delete()
+        .eq('id', siteId);
+
+      if (error) throw error;
+
+      addToast('Site removed successfully', 'success');
+      fetchSites(selectedGroup.id);
+    } catch (error) {
+      console.error('Error removing site:', error);
+      addToast('Error removing site', 'error');
     }
   };
 
@@ -338,8 +378,8 @@ const Groups: React.FC = () => {
             <p className="text-muted mb-4">
               You haven't created or joined any groups yet. Groups help you organize your coworking spaces and members.
             </p>
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               onClick={() => setShowGroupForm(true)}
             >
               <i className="fas fa-plus me-2"></i>Create Your First Group
@@ -349,7 +389,7 @@ const Groups: React.FC = () => {
           <div className="row g-4">
             {groups.map(group => (
               <div key={group.id} className="col-md-6 col-lg-4">
-                <GroupCard 
+                <GroupCard
                   group={group}
                   onManage={handleGroupDetailsOpen}
                 />
@@ -380,12 +420,19 @@ const Groups: React.FC = () => {
         onRoleChange={handleRoleChange}
         onLeaveGroup={handleLeaveGroup}
         rolePriority={rolePriority}
-        onShowLeaveConfirm={() => setShowLeaveConfirm(true)}  // Add this line
+        onShowLeaveConfirm={() => setShowLeaveConfirm(true)}
+        sites={sites} // Add this line
+        onAddSite={() => setShowAddSite(true)} // Add these handlers
+        onEditSite={(site) => {
+          setSelectedSite(site);
+          setShowEditSite(true);
+        }}
+        onRemoveSite={handleRemoveSite}
       />
 
       {/* Add Member Offcanvas */}
-      <Offcanvas 
-        show={showAddMember} 
+      <Offcanvas
+        show={showAddMember}
         onHide={() => setShowAddMember(false)}
         placement="end"
       >
@@ -414,13 +461,13 @@ const Groups: React.FC = () => {
               </Form.Select>
             </Form.Group>
             <div className="d-flex justify-content-end gap-2 mt-4">
-              <Button 
+              <Button
                 variant="light"
                 onClick={() => setShowAddMember(false)}
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={handleAddUser}
                 disabled={isAddingMember}
               >
@@ -487,6 +534,30 @@ const Groups: React.FC = () => {
         isLeaving={isLeavingGroup}
         onConfirmLeave={handleLeaveGroup}
       />
+
+      <GroupAddSite
+        show={showAddSite}
+        onHide={() => setShowAddSite(false)}
+        group={selectedGroup}
+        onSiteAdded={() => {
+          fetchSites(selectedGroup?.id || '');
+        }}
+      />
+
+      <GroupEditSite
+          show={showEditSite}
+          onHide={() => setShowEditSite(false)}
+          site={selectedSite}
+          onSiteUpdated={() => {
+              fetchSites(selectedGroup?.id || '');
+          }}
+          onSiteDeleted={() => {
+              fetchSites(selectedGroup?.id || '');
+              setSelectedSite(null); // Clear the selected site
+              setShowEditSite(false); // Close the edit site offcanvas
+          }}
+      />
+
     </>
   );
 };

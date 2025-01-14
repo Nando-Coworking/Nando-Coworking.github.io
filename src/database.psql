@@ -524,7 +524,7 @@ USING (
      FROM public.group_users
      WHERE group_users.group_id = sites.group_id
        AND group_users.user_id = auth.uid()
-       AND group_users.role IN ('owner')
+       AND group_users.role IN ('owner','admin')
    )
 );
 
@@ -909,7 +909,8 @@ RETURNS TABLE (
   name varchar(255),
   description text,
   user_role varchar(50),
-  member_count bigint
+  member_count bigint,
+  site_count bigint
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -922,7 +923,8 @@ BEGIN
     g.name,
     g.description,
     gu.role as user_role,
-    (SELECT COUNT(*) FROM group_users WHERE group_id = g.id) as member_count
+    (SELECT COUNT(*) FROM group_users WHERE group_id = g.id) as member_count,
+    (SELECT COUNT(*) FROM sites WHERE group_id = g.id) as site_count
   FROM groups g
   JOIN group_users gu ON g.id = gu.group_id
   WHERE gu.user_id = _user_id;

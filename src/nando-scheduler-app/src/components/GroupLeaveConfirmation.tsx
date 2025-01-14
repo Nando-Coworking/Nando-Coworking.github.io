@@ -49,7 +49,7 @@ export const GroupLeaveConfirmation: React.FC<Props> = ({
 
             <div className="d-flex justify-content-end gap-2 mt-4">
                 <Button variant="light" onClick={onHide}>
-                    <i className="fas fa-arrow-left me-2"></i>Back
+                    <i className="fas fa-chevron-left me-2"></i>Back
                 </Button>
                 <Button
                     variant="warning"
