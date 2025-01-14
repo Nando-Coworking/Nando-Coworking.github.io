@@ -4,6 +4,14 @@ import { Container, Button, Card, Badge, Offcanvas, Form, ListGroup, Alert } fro
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../AuthContext';
 import { useToast } from '../ToastContext';
+import { GroupCard } from '../components/GroupCard';
+import { GroupDeleteConfirmation } from '../components/GroupDeleteConfirmation';
+import { GroupCreateForm } from '../components/GroupCreateForm';
+import { GroupAddMember } from '../components/GroupAddMember';
+import { GroupDetailsOffcanvas } from '../components/GroupDetailsOffcanvas';
+import { GroupEditForm } from '../components/GroupEditForm';
+// Add import
+import { GroupLeaveConfirmation } from '../components/GroupLeaveConfirmation';
 
 interface Group {
   id: string;
@@ -31,6 +39,7 @@ const Groups: React.FC = () => {
   const [groupUsers, setGroupUsers] = useState<GroupUser[]>([]);
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState('member');
+  const [isAddingMember, setIsAddingMember] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -38,13 +47,9 @@ const Groups: React.FC = () => {
   });
 
   // Add new state for editing
-  const [editingGroup, setEditingGroup] = useState({
-    name: '',
-    description: ''
-  });
+  const [showEditForm, setShowEditForm] = useState(false);
 
   // Add new state variables after other state declarations
-  const [isAddingMember, setIsAddingMember] = useState(false);
   const [isSavingChanges, setIsSavingChanges] = useState(false);
 
   // Add new state
@@ -55,6 +60,16 @@ const Groups: React.FC = () => {
 
   // Update state
   const [isDeletingGroup, setIsDeletingGroup] = useState(false);
+
+  // Add this with other state declarations
+  const [editingGroup, setEditingGroup] = useState({
+    name: '',
+    description: ''
+  });
+
+  // Add state for leave confirmation
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [isLeavingGroup, setIsLeavingGroup] = useState(false);
 
   const fetchGroups = async () => {
     if (!user?.id) {
@@ -104,26 +119,6 @@ const Groups: React.FC = () => {
       fetchGroups();
     }
   }, [user]);
-
-  const handleCreateGroup = async () => {
-    try {
-      const { data, error } = await supabase
-        .rpc('create_group_with_owner', {
-          _name: formData.name,
-          _description: formData.description,
-          _user_id: user?.id
-        });
-
-      if (error) throw error;
-
-      addToast('Group created successfully', 'success');
-      setShowGroupForm(false);
-      fetchGroups();
-    } catch (error: any) {
-      console.error('Error creating group:', error);
-      addToast(error.message || 'Error creating group', 'error');
-    }
-  };
 
   const handleAddUser = async () => {
     if (!selectedGroup) return;
@@ -195,9 +190,18 @@ const Groups: React.FC = () => {
           name: editingGroup.name,
           description: editingGroup.description
         })
-        .eq('id', selectedGroup.id);
+        .eq('id', selectedGroup.id)
+        .select() // Add this to get the updated record
+        .single(); // Add this to get a single record
 
       if (error) throw error;
+      
+      // Update the selected group in memory with the new values
+      setSelectedGroup({
+        ...selectedGroup,
+        name: editingGroup.name,
+        description: editingGroup.description
+      });
       
       addToast('Group updated successfully', 'success');
       fetchGroups();
@@ -219,7 +223,7 @@ const Groups: React.FC = () => {
     setSelectedGroup(group);
     setEditingGroup({
       name: group.name,
-      description: group.description || ''  // Handle null description
+      description: group.description || ''
     });
     fetchGroupUsers(group.id);
     setShowGroupDetails(true);
@@ -279,27 +283,29 @@ const Groups: React.FC = () => {
     }
   };
   
+  // Update handleLeaveGroup
   const handleLeaveGroup = async () => {
-    if (!selectedGroup || !user?.id || 
-        !window.confirm('Are you sure you want to leave this group?')) {
-      return;
-    }
+    if (!selectedGroup || !user?.id) return;
+    setIsLeavingGroup(true);
   
     try {
-      const { error } = await supabase
-        .from('group_users')
-        .delete()
-        .eq('group_id', selectedGroup.id)
-        .eq('user_id', user.id);
+        const { error } = await supabase
+            .from('group_users')
+            .delete()
+            .eq('group_id', selectedGroup.id)
+            .eq('user_id', user.id);
   
-      if (error) throw error;
+        if (error) throw error;
   
-      addToast('Left group successfully', 'success');
-      setShowGroupDetails(false);
-      fetchGroups();
+        addToast('Left group successfully', 'success');
+        setShowLeaveConfirm(false);
+        setShowGroupDetails(false);
+        fetchGroups();
     } catch (error) {
-      console.error('Error leaving group:', error);
-      addToast('Error leaving group', 'error');
+        console.error('Error leaving group:', error);
+        addToast('Error leaving group', 'error');
+    } finally {
+        setIsLeavingGroup(false);
     }
   };
 
@@ -343,39 +349,10 @@ const Groups: React.FC = () => {
           <div className="row g-4">
             {groups.map(group => (
               <div key={group.id} className="col-md-6 col-lg-4">
-                <Card>
-                  <Card.Body>
-                    <Card.Title className="d-flex justify-content-between">
-                      {group.name}
-                      <Badge 
-                        bg={group.user_role === 'owner' ? 'primary' : 
-                            group.user_role === 'admin' ? 'warning' : 
-                            'info'}
-                        text={group.user_role === 'owner' ? undefined : 'dark'}
-                      >
-                        <i className={`fas fa-${
-                          group.user_role === 'owner' ? 'power-off' : 
-                          group.user_role === 'admin' ? 'lock' : 
-                          'user'
-                        } me-1`}></i>
-                        {group.user_role}
-                      </Badge>
-                    </Card.Title>
-                    <Card.Text>{group.description}</Card.Text>
-                    <div className="d-flex justify-content-between align-items-center">
-                      <small className="text-muted">
-                        <i className="fas fa-user me-1"></i>
-                        {group.member_count} members
-                      </small>
-                      <Button 
-                        variant="outline-primary"
-                        onClick={() => handleGroupDetailsOpen(group)}
-                      >
-                        Manage<i className="fas fa-chevron-right ms-2"></i>
-                      </Button>
-                    </div>
-                  </Card.Body>
-                </Card>
+                <GroupCard 
+                  group={group}
+                  onManage={handleGroupDetailsOpen}
+                />
               </div>
             ))}
           </div>
@@ -383,202 +360,28 @@ const Groups: React.FC = () => {
       </Container>
 
       {/* Create/Edit Group Offcanvas */}
-      <Offcanvas 
-        show={showGroupForm} 
+      <GroupCreateForm
+        show={showGroupForm}
         onHide={() => setShowGroupForm(false)}
-        placement="end"
-      >
-        <Offcanvas.Header closeButton>
-          <Offcanvas.Title>Create New Group</Offcanvas.Title>
-        </Offcanvas.Header>
-        <Offcanvas.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
-              <Form.Control
-                type="text"
-                value={formData.name}
-                onChange={e => setFormData({...formData, name: e.target.value})}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={formData.description}
-                onChange={e => setFormData({...formData, description: e.target.value})}
-              />
-            </Form.Group>
-            <Button onClick={handleCreateGroup}>
-              Create Group
-            </Button>
-          </Form>
-        </Offcanvas.Body>
-      </Offcanvas>
+        onGroupCreated={fetchGroups}
+        userId={user?.id}
+      />
 
       {/* Group Details Offcanvas */}
-      <Offcanvas 
-        show={showGroupDetails} 
+      <GroupDetailsOffcanvas
+        show={showGroupDetails}
         onHide={handleGroupDetailsClose}
-        placement="end"
-      >
-        <Offcanvas.Header closeButton>
-          <Offcanvas.Title>{selectedGroup?.name}</Offcanvas.Title>
-        </Offcanvas.Header>
-        <Offcanvas.Body>
-          {/* Group metadata section - only owner can edit */}
-          {isOwner(selectedGroup?.user_role) ? (
-            <Form className="mb-4">
-              <Form.Group className="mb-3">
-                <Form.Label>Name</Form.Label>
-                <Form.Control
-                  type="text"
-                  value={editingGroup.name}
-                  onChange={e => setEditingGroup({...editingGroup, name: e.target.value})}
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Description</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={3}
-                  value={editingGroup.description}
-                  onChange={e => setEditingGroup({...editingGroup, description: e.target.value})}
-                />
-              </Form.Group>
-              <Button 
-                onClick={handleUpdateGroup}
-                disabled={isSavingChanges}
-              >
-                {isSavingChanges ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    Saving...
-                  </>
-                ) : (
-                  'Save Changes'
-                )}
-              </Button>
-            </Form>
-          ) : (
-            <div className="mb-4">
-              <h5>{selectedGroup?.name}</h5>
-              <p className="text-muted">{selectedGroup?.description}</p>
-            </div>
-          )}
-
-          <hr className="my-4" />
-
-          <h5 className="mt-4">Members</h5>
-          <ListGroup className="mb-3">
-            {groupUsers
-              .sort((a, b) => {
-                // First compare by role priority
-                const roleDiff = rolePriority[a.role as keyof typeof rolePriority] - 
-                                rolePriority[b.role as keyof typeof rolePriority];
-                
-                // If same role, sort by email
-                if (roleDiff === 0) {
-                  return a.email.localeCompare(b.email);
-                }
-                
-                return roleDiff;
-              })
-              .map(groupUser => (
-                <ListGroup.Item 
-                  key={groupUser.id}
-                  className="d-flex justify-content-between align-items-center"
-                >
-                  <div>
-                    <div>{groupUser.email}</div>
-                    <Badge 
-                      bg={groupUser.role === 'owner' ? 'primary' : 
-                          groupUser.role === 'admin' ? 'warning' : 
-                          'info'}
-                      text={groupUser.role === 'owner' ? undefined : 'dark'}
-                    >
-                      <i className={`fas fa-${
-                        groupUser.role === 'owner' ? 'power-off' : 
-                        groupUser.role === 'admin' ? 'lock' : 
-                        'user'
-                      } me-1`}></i>
-                      {groupUser.role}
-                    </Badge>
-                  </div>
-                  <div>
-                    {/* Show role dropdown for owners/admins */}
-                    {canManageMembers(selectedGroup?.user_role) && 
-                    groupUser.role !== 'owner' && 
-                    groupUser.user_id !== user?.id && (
-                      <Form.Select
-                        size="sm"
-                        value={groupUser.role}
-                        onChange={(e) => handleRoleChange(groupUser.user_id, e.target.value)}
-                        style={{ width: 'auto', display: 'inline-block', marginRight: '0.5rem' }}
-                      >
-                        <option value="member">Member</option>
-                        <option value="admin">Admin</option>
-                      </Form.Select>
-                    )}
-
-                    {/* Show Leave link for self, Remove button for others */}
-                    {groupUser.user_id === user?.id ? (
-                      groupUser.role !== 'owner' && (
-                        <Button 
-                          variant="link" 
-                          className="text-danger p-0 border-0" 
-                          onClick={handleLeaveGroup}
-                        >
-                          Leave Group
-                        </Button>
-                      )
-                    ) : (
-                      canManageMembers(selectedGroup?.user_role) && 
-                      groupUser.role !== 'owner' && (
-                        <Button 
-                          variant="outline-danger" 
-                          size="sm"
-                          onClick={() => handleRemoveUser(groupUser.user_id)}
-                        >
-                          <i className="fas fa-times"></i>
-                        </Button>
-                      )
-                    )}
-                  </div>
-                </ListGroup.Item>
-              ))}
-          </ListGroup>
-
-          {/* Add member form - visible to owners and admins */}
-          {canManageMembers(selectedGroup?.user_role) && (
-            <Button 
-              variant="primary"
-              onClick={() => setShowAddMember(true)}
-              className="mt-3"
-            >
-              <i className="fas fa-plus me-2"></i>
-              Add Member
-            </Button>
-          )}
-
-          {/* Danger zone - only for owners */}
-          {isOwner(selectedGroup?.user_role) && (
-            <>
-              <hr className="my-4 border-danger" />
-              <div className="mt-4">
-                <Button 
-                  variant="outline-danger"
-                  onClick={() => setShowDeleteConfirm(true)}
-                >
-                  <i className="fas fa-trash-alt me-2"></i>
-                  Delete Group
-                </Button>
-              </div>
-            </>
-          )}
-        </Offcanvas.Body>
-      </Offcanvas>
+        selectedGroup={selectedGroup}
+        groupUsers={groupUsers}
+        onEditClick={() => setShowEditForm(true)}
+        onDeleteClick={() => setShowDeleteConfirm(true)}
+        onAddMemberClick={() => setShowAddMember(true)}
+        onRemoveUser={handleRemoveUser}
+        onRoleChange={handleRoleChange}
+        onLeaveGroup={handleLeaveGroup}
+        rolePriority={rolePriority}
+        onShowLeaveConfirm={() => setShowLeaveConfirm(true)}  // Add this line
+      />
 
       {/* Add Member Offcanvas */}
       <Offcanvas 
@@ -636,97 +439,54 @@ const Groups: React.FC = () => {
       </Offcanvas>
 
       {/* Add new Delete Confirmation Offcanvas */}
-      <Offcanvas 
-        show={showDeleteConfirm} 
+      <GroupDeleteConfirmation
+        show={showDeleteConfirm}
         onHide={() => setShowDeleteConfirm(false)}
-        placement="end"
-      >
-        <Offcanvas.Header closeButton>
-          <Offcanvas.Title className="text-danger">
-            <i className="fas fa-exclamation-triangle me-2"></i>
-            Delete Group?
-          </Offcanvas.Title>
-        </Offcanvas.Header>
-        <Offcanvas.Body>
-          {/* Group Info */}
-          <div className="mb-4">
-            <h5>{selectedGroup?.name}</h5>
-            <p className="text-muted">{selectedGroup?.description}</p>
-          </div>
+        groupName={selectedGroup?.name || ''}
+        groupDescription={selectedGroup?.description || ''}
+        groupUsers={groupUsers}
+        isDeleting={isDeletingGroup}
+        onConfirmDelete={handleDeleteGroup}
+      />
 
-          {/* Members List */}
-          <div className="mb-4">
-            <h6>Current Members:</h6>
-            <ListGroup variant="flush" className="mb-3">
-              {groupUsers.map(groupUser => (
-                <ListGroup.Item 
-                  key={groupUser.id}
-                  className="px-0 d-flex justify-content-between align-items-center"
-                >
-                  <div>
-                    <div>{groupUser.email}</div>
-                    <Badge 
-                      bg={groupUser.role === 'owner' ? 'primary' : 
-                          groupUser.role === 'admin' ? 'warning' : 
-                          'info'}
-                      text={groupUser.role === 'owner' ? undefined : 'dark'}
-                    >
-                      <i className={`fas fa-${
-                        groupUser.role === 'owner' ? 'power-off' : 
-                        groupUser.role === 'admin' ? 'lock' : 
-                        'user'
-                      } me-1`}></i>
-                      {groupUser.role}
-                    </Badge>
-                  </div>
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
-          </div>
+      {/* Add Member Component */}
+      <GroupAddMember
+        show={showAddMember}
+        onHide={() => setShowAddMember(false)}
+        selectedGroup={selectedGroup}
+        onMemberAdded={() => {
+          fetchGroupUsers(selectedGroup?.id || '');
+          fetchGroups();
+        }}
+      />
 
-          {/* Warning Section */}
-          <Alert variant="danger">
-            <i className="fas fa-exclamation-circle me-2"></i>
-            This will permanently delete:
-            <ul className="mb-0 mt-2">
-              <li>All {groupUsers.length} members and their roles</li>
-              <li>All associated sites</li>
-              <li>All associated resources</li>
-              <li>All reservations for those resources</li>
-            </ul>
-          </Alert>
-          <p className="text-muted small mt-3">
-            This action cannot be undone.
-          </p>
+      <GroupEditForm
+        show={showEditForm}
+        onHide={() => setShowEditForm(false)}
+        group={selectedGroup}
+        onGroupUpdated={() => {
+          // First update the selected group with new values
+          if (selectedGroup) {
+            setSelectedGroup({
+              ...selectedGroup,
+              name: selectedGroup.name,
+              description: selectedGroup.description
+            });
+          }
+          // Then refresh the data
+          fetchGroups();
+          fetchGroupUsers(selectedGroup?.id || '');
+        }}
+      />
 
-          {/* Action Buttons */}
-          <div className="d-flex justify-content-end gap-2 mt-4">
-            <Button 
-              variant="light"
-              onClick={() => setShowDeleteConfirm(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              variant="danger"
-              onClick={handleDeleteGroup}
-              disabled={isDeletingGroup}
-            >
-              {isDeletingGroup ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  Deleting...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-trash-alt me-2"></i>
-                  Yes, Delete Group
-                </>
-              )}
-            </Button>
-          </div>
-        </Offcanvas.Body>
-      </Offcanvas>
+      <GroupLeaveConfirmation
+        show={showLeaveConfirm}
+        onHide={() => setShowLeaveConfirm(false)}
+        groupName={selectedGroup?.name || ''}
+        groupDescription={selectedGroup?.description || ''}
+        isLeaving={isLeavingGroup}
+        onConfirmLeave={handleLeaveGroup}
+      />
     </>
   );
 };
