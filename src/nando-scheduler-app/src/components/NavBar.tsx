@@ -108,8 +108,8 @@ const Navbar: React.FC = () => {
             )}
             {user && (
               <li className="nav-item">
-                <Link className="nav-link" to="/groups">
-                  <i className="fas fa-users me-2"></i>Groups
+                <Link className="nav-link" to="/teams">
+                  <i className="fas fa-users me-2"></i>Teams
                 </Link>
               </li>
             )}

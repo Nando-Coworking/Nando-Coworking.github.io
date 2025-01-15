@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
 import { Offcanvas, Form, Button, Alert, Badge } from 'react-bootstrap';
-import { GroupUser } from '../types/group';
+import { TeamUser } from '../types/team';
 
 interface Props {
     show: boolean;
     onHide: () => void;
-    groupName: string;
-    member: GroupUser;
+    teamName: string;
+    member: TeamUser;
     onRoleChange: (userId: string, newRole: string) => Promise<void>;
     onRemoveUser: (userId: string) => Promise<void>;
     currentUserRole?: string;
 }
 
-export const GroupMemberEdit: React.FC<Props> = ({
+export const TeamMemberEdit: React.FC<Props> = ({
     show,
     onHide,
-    groupName,
+    teamName,
     member,
     onRoleChange,
     onRemoveUser,
@@ -48,7 +48,7 @@ export const GroupMemberEdit: React.FC<Props> = ({
                         <i className="fas fa-user-edit me-2"></i>Edit Member
                     </Offcanvas.Title>
                     <div className="text-muted" style={{ fontSize: '0.85em' }}>
-                        Use the area below to manage the member of the group: "{groupName}"
+                        Use the area below to manage the member of the team: "{teamName}"
                     </div>
                 </div>
             </Offcanvas.Header>
@@ -88,7 +88,7 @@ export const GroupMemberEdit: React.FC<Props> = ({
                     )}
                     <Form.Text className="text-muted">
                         {!canModifyRole && "You don't have permission to modify this user's role"}
-                        {canModifyRole && canPromoteToAdmin && "Admins can manage members and group settings"}
+                        {canModifyRole && canPromoteToAdmin && "Admins can manage members and team settings"}
                         {canModifyRole && !canPromoteToAdmin && "You can only modify member roles"}
                     </Form.Text>
                 </Form.Group>
@@ -98,7 +98,7 @@ export const GroupMemberEdit: React.FC<Props> = ({
                 <div className="mt-4">
                     <h6 className="text-danger">Danger Zone</h6>
                     <p className="text-muted small">
-                        Removing a member will revoke their access to all group resources immediately.
+                        Removing a member will revoke their access to all team resources immediately.
                     </p>
                     <Button
                         variant="outline-danger"
@@ -110,7 +110,7 @@ export const GroupMemberEdit: React.FC<Props> = ({
                         disabled={member.role === 'owner'}
                     >
                         <i className="fas fa-user-minus me-2"></i>
-                        Immediately Remove from Group
+                        Immediately Remove from Team
                     </Button>
                 </div>
             </Offcanvas.Body>

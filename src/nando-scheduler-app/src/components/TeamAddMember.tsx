@@ -2,19 +2,19 @@ import React, { useState } from 'react';
 import { Offcanvas, Form, Button } from 'react-bootstrap';
 import { supabase } from '../supabaseClient';
 import { useToast } from '../ToastContext';
-import { Group } from '../types/group';
+import { Team } from '../types/team';
 
 interface Props {
     show: boolean;
     onHide: () => void;
-    selectedGroup: Group | null;
+    selectedTeam: Team | null;
     onMemberAdded: () => void;
 }
 
-export const GroupAddMember: React.FC<Props> = ({
+export const TeamAddMember: React.FC<Props> = ({
     show,
     onHide,
-    selectedGroup,
+    selectedTeam,
     onMemberAdded
 }) => {
     const { addToast } = useToast();
@@ -23,7 +23,7 @@ export const GroupAddMember: React.FC<Props> = ({
     const [isAddingMember, setIsAddingMember] = useState(false);
 
     const handleAddUser = async () => {
-        if (!selectedGroup) return;
+        if (!selectedTeam) return;
         setIsAddingMember(true);
         try {
             const { data: userId, error: userError } = await supabase
@@ -39,9 +39,9 @@ export const GroupAddMember: React.FC<Props> = ({
             }
 
             const { error } = await supabase
-                .from('group_users')
+                .from('team_users')
                 .insert([{
-                    group_id: selectedGroup.id,
+                    team_id: selectedTeam.id,
                     user_id: userId,
                     role: newRole
                 }]);
@@ -66,7 +66,7 @@ export const GroupAddMember: React.FC<Props> = ({
                 <div>
                     <Offcanvas.Title><i className="fas fa-user-plus me-2"></i>Add Member</Offcanvas.Title>
                     <div className="text-muted" style={{ fontSize: '0.85em' }}>
-                        Use the area below to add a member to the current group: "{selectedGroup?.name}"
+                        Use the area below to add a member to the current team: "{selectedTeam?.name}"
                     </div>
                 </div>
             </Offcanvas.Header>

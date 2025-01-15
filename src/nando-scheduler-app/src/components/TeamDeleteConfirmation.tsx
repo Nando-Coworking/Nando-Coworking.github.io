@@ -1,24 +1,24 @@
-// src/components/GroupDeleteConfirmation.tsx
+// src/components/TeamDeleteConfirmation.tsx
 import React from 'react';
 import { Offcanvas, ListGroup, Badge, Alert, Button } from 'react-bootstrap';
-import { GroupUser } from '../types/group';
+import { TeamUser } from '../types/team';
 
 interface Props {
     show: boolean;
     onHide: () => void;
-    groupName: string;
-    groupDescription: string;
-    groupUsers: GroupUser[];
+    teamName: string;
+    teamDescription: string;
+    teamUsers: TeamUser[];
     isDeleting: boolean;
     onConfirmDelete: () => void;
 }
 
-export const GroupDeleteConfirmation: React.FC<Props> = ({
+export const TeamDeleteConfirmation: React.FC<Props> = ({
     show,
     onHide,
-    groupName,
-    groupDescription,
-    groupUsers,
+    teamName,
+    teamDescription,
+    teamUsers,
     isDeleting,
     onConfirmDelete
 }) => (
@@ -26,36 +26,36 @@ export const GroupDeleteConfirmation: React.FC<Props> = ({
         <Offcanvas.Header closeButton className="border-bottom">
             <Offcanvas.Title className="text-danger">
                 <i className="fas fa-exclamation-triangle me-2"></i>
-                Delete Group?
+                Delete Team?
             </Offcanvas.Title>
         </Offcanvas.Header>
         <Offcanvas.Body>
             <div className="mb-4">
-                <h5>{groupName}</h5>
-                <p className="text-muted">{groupDescription}</p>
+                <h5>{teamName}</h5>
+                <p className="text-muted">{teamDescription}</p>
             </div>
 
             <div className="mb-4">
                 <h6>Current Members:</h6>
                 <ListGroup variant="flush" className="mb-3">
-                    {groupUsers.map(groupUser => (
+                    {teamUsers.map(teamUser => (
                         <ListGroup.Item
-                            key={groupUser.id}
+                            key={teamUser.id}
                             className="px-0 d-flex justify-content-between align-items-center"
                         >
                             <div>
-                                <div>{groupUser.email}</div>
+                                <div>{teamUser.email}</div>
                                 <Badge
-                                    bg={groupUser.role === 'owner' ? 'primary' :
-                                        groupUser.role === 'admin' ? 'warning' :
+                                    bg={teamUser.role === 'owner' ? 'primary' :
+                                        teamUser.role === 'admin' ? 'warning' :
                                             'info'}
-                                    text={groupUser.role === 'owner' ? undefined : 'dark'}
+                                    text={teamUser.role === 'owner' ? undefined : 'dark'}
                                 >
-                                    <i className={`fas fa-${groupUser.role === 'owner' ? 'power-off' :
-                                            groupUser.role === 'admin' ? 'lock' :
+                                    <i className={`fas fa-${teamUser.role === 'owner' ? 'power-off' :
+                                            teamUser.role === 'admin' ? 'lock' :
                                                 'user'
                                         } me-1`}></i>
-                                    {groupUser.role}
+                                    {teamUser.role}
                                 </Badge>
                             </div>
                         </ListGroup.Item>
@@ -67,7 +67,7 @@ export const GroupDeleteConfirmation: React.FC<Props> = ({
                 <i className="fas fa-exclamation-circle me-2"></i>
                 This will permanently delete:
                 <ul className="mb-0 mt-2">
-                    <li>All {groupUsers.length} members and their roles</li>
+                    <li>All {teamUsers.length} members and their roles</li>
                     <li>All associated sites</li>
                     <li>All associated resources</li>
                     <li>All reservations for those resources</li>
@@ -94,7 +94,7 @@ export const GroupDeleteConfirmation: React.FC<Props> = ({
                     ) : (
                         <>
                             <i className="fas fa-trash-alt me-2"></i>
-                            Yes, Delete Group
+                            Yes, Delete Team
                         </>
                     )}
                 </Button>

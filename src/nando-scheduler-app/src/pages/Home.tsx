@@ -30,7 +30,7 @@ export default function Home() {
                 <i className="fa-solid fa-users me-2"></i>
                 Collaborative Spaces
               </Card.Title>
-              <Card.Text>Group rooms for team projects and networking opportunities.</Card.Text>
+              <Card.Text>Team rooms for team projects and networking opportunities.</Card.Text>
               <img
                 src="https://picsum.photos/400/100.jpg?random=2"
                 alt="Coworking space"

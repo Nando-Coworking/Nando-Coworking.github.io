@@ -3,17 +3,17 @@ import { Container, Button, Card, Badge, Offcanvas, Form, ListGroup, Alert } fro
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../AuthContext';
 import { useToast } from '../ToastContext';
-import { GroupCard } from '../components/GroupCard';
-import { GroupDeleteConfirmation } from '../components/GroupDeleteConfirmation';
-import { GroupCreateForm } from '../components/GroupCreateForm';
-import { GroupAddMember } from '../components/GroupAddMember';
-import { GroupDetailsOffcanvas } from '../components/GroupDetailsOffcanvas';
-import { GroupEditForm } from '../components/GroupEditForm';
-import { GroupLeaveConfirmation } from '../components/GroupLeaveConfirmation';
-import { GroupAddSite } from '../components/GroupAddSite';
-import { GroupEditSite } from '../components/GroupEditSite';
+import { TeamCard } from '../components/TeamCard';
+import { TeamDeleteConfirmation } from '../components/TeamDeleteConfirmation';
+import { TeamCreateForm } from '../components/TeamCreateForm';
+import { TeamAddMember } from '../components/TeamAddMember';
+import { TeamDetailsOffcanvas } from '../components/TeamDetailsOffcanvas';
+import { TeamEditForm } from '../components/TeamEditForm';
+import { TeamLeaveConfirmation } from '../components/TeamLeaveConfirmation';
+import { TeamAddSite } from '../components/TeamAddSite';
+import { TeamEditSite } from '../components/TeamEditSite';
 
-interface Group {
+interface Team {
   id: string;
   name: string;
   description: string;
@@ -21,22 +21,22 @@ interface Group {
   user_role?: string;
 }
 
-interface GroupUser {
+interface TeamUser {
   id: string;
   user_id: string;
   email: string;
   role: string;
 }
 
-const Groups: React.FC = () => {
+const Teams: React.FC = () => {
   const { user } = useAuth();
   const { addToast } = useToast();
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
-  const [showGroupForm, setShowGroupForm] = useState(false);
-  const [showGroupDetails, setShowGroupDetails] = useState(false);
-  const [groupUsers, setGroupUsers] = useState<GroupUser[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [showTeamForm, setShowTeamForm] = useState(false);
+  const [showTeamDetails, setShowTeamDetails] = useState(false);
+  const [teamUsers, setTeamUsers] = useState<TeamUser[]>([]);
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState('member');
   const [isAddingMember, setIsAddingMember] = useState(false);
@@ -63,20 +63,20 @@ const Groups: React.FC = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Update state
-  const [isDeletingGroup, setIsDeletingGroup] = useState(false);
+  const [isDeletingTeam, setIsDeletingTeam] = useState(false);
 
   // Add this with other state declarations
-  const [editingGroup, setEditingGroup] = useState({
+  const [editingTeam, setEditingTeam] = useState({
     name: '',
     description: ''
   });
 
   // Add state for leave confirmation
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  const [isLeavingGroup, setIsLeavingGroup] = useState(false);
+  const [isLeavingTeam, setIsLeavingTeam] = useState(false);
 
 
-  const fetchGroups = async () => {
+  const fetchTeams = async () => {
     if (!user?.id) {
       setLoading(false);
       return;
@@ -84,47 +84,47 @@ const Groups: React.FC = () => {
 
     try {
       const { data, error } = await supabase
-        .rpc('get_group_with_member_count', {
+        .rpc('get_team_with_member_count', {
           _user_id: user.id
         });
 
       if (error) throw error;
 
-      setGroups(data);
+      setTeams(data);
     } catch (error) {
-      addToast('Error fetching groups', 'error');
+      addToast('Error fetching teams', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchGroupUsers = async (groupId: string) => {
+  const fetchTeamUsers = async (teamId: string) => {
     try {
       const { data, error } = await supabase
-        .rpc('get_group_members', {
-          _group_id: groupId
+        .rpc('get_team_members', {
+          _team_id: teamId
         });
 
       if (error) throw error;
 
-      setGroupUsers(data.map(item => ({
+      setTeamUsers(data.map(item => ({
         id: item.id,
         user_id: item.user_id,
         role: item.role,
         email: item.email
       })));
     } catch (error) {
-      console.error('Error fetching group members:', error);
-      addToast('Error fetching group members', 'error');
+      console.error('Error fetching team members:', error);
+      addToast('Error fetching team members', 'error');
     }
   };
 
-  const fetchSites = async (groupId: string) => {
+  const fetchSites = async (teamId: string) => {
       try {
           const { data, error } = await supabase
               .from('sites')
               .select('*')
-              .eq('group_id', groupId);
+              .eq('team_id', teamId);
   
           if (error) throw error;
           setSites(data);
@@ -136,12 +136,12 @@ const Groups: React.FC = () => {
 
   useEffect(() => {
     if (user?.id) {
-      fetchGroups();
+      fetchTeams();
     }
   }, [user]);
 
   const handleAddUser = async () => {
-    if (!selectedGroup) return;
+    if (!selectedTeam) return;
     setIsAddingMember(true);
     try {
       // Use RPC to get user ID by email
@@ -158,9 +158,9 @@ const Groups: React.FC = () => {
       }
 
       const { error } = await supabase
-        .from('group_users')
+        .from('team_users')
         .insert([{
-          group_id: selectedGroup.id,
+          team_id: selectedTeam.id,
           user_id: userId,
           role: newRole
         }]);
@@ -168,8 +168,8 @@ const Groups: React.FC = () => {
       if (error) throw error;
 
       addToast('User added successfully', 'success');
-      fetchGroupUsers(selectedGroup.id);
-      fetchGroups(); // Add this line
+      fetchTeamUsers(selectedTeam.id);
+      fetchTeams(); // Add this line
       setNewEmail('');
     } catch (error) {
       console.error('Error adding user:', error);
@@ -180,74 +180,74 @@ const Groups: React.FC = () => {
   };
 
   const handleRemoveUser = async (userId: string) => {
-    if (!selectedGroup) return;
+    if (!selectedTeam) return;
 
     try {
       const { error } = await supabase
-        .from('group_users')
+        .from('team_users')
         .delete()
-        .eq('group_id', selectedGroup.id)
+        .eq('team_id', selectedTeam.id)
         .eq('user_id', userId);
 
       if (error) throw error;
 
       addToast('User removed successfully', 'success');
-      fetchGroupUsers(selectedGroup.id);
-      fetchGroups(); // Add this line
+      fetchTeamUsers(selectedTeam.id);
+      fetchTeams(); // Add this line
     } catch (error) {
       addToast('Error removing user', 'error');
     }
   };
 
-  // Add handler for group updates
-  const handleUpdateGroup = async () => {
-    if (!selectedGroup) return;
+  // Add handler for team updates
+  const handleUpdateTeam = async () => {
+    if (!selectedTeam) return;
     setIsSavingChanges(true);
     try {
       const { error } = await supabase
-        .from('groups')
+        .from('teams')
         .update({
-          name: editingGroup.name,
-          description: editingGroup.description
+          name: editingTeam.name,
+          description: editingTeam.description
         })
-        .eq('id', selectedGroup.id)
+        .eq('id', selectedTeam.id)
         .select() // Add this to get the updated record
         .single(); // Add this to get a single record
 
       if (error) throw error;
 
-      // Update the selected group in memory with the new values
-      setSelectedGroup({
-        ...selectedGroup,
-        name: editingGroup.name,
-        description: editingGroup.description
+      // Update the selected team in memory with the new values
+      setSelectedTeam({
+        ...selectedTeam,
+        name: editingTeam.name,
+        description: editingTeam.description
       });
 
-      addToast('Group updated successfully', 'success');
-      fetchGroups();
+      addToast('Team updated successfully', 'success');
+      fetchTeams();
     } catch (error) {
-      console.error('Error updating group:', error);
-      addToast('Error updating group', 'error');
+      console.error('Error updating team:', error);
+      addToast('Error updating team', 'error');
     } finally {
       setIsSavingChanges(false);
     }
   };
 
   // Add handler for slide-out close
-  const handleGroupDetailsClose = () => {
-    setShowGroupDetails(false);
-    fetchGroups(); // Refresh groups to update member count
+  const handleTeamDetailsClose = () => {
+    setShowTeamDetails(false);
+    fetchTeams(); // Refresh teams to update member count
   };
 
-  const handleGroupDetailsOpen = (group: Group) => {
-    setSelectedGroup(group);
-    setEditingGroup({
-      name: group.name,
-      description: group.description || ''
+  const handleTeamDetailsOpen = (team: Team) => {
+    setSelectedTeam(team);
+    setEditingTeam({
+      name: team.name,
+      description: team.description || ''
     });
-    fetchGroupUsers(group.id);
-    fetchSites(group.id);
-    setShowGroupDetails(true);
+    fetchTeamUsers(team.id);
+    fetchSites(team.id);
+    setShowTeamDetails(true);
   };
 
   // Add role priority mapping
@@ -258,81 +258,81 @@ const Groups: React.FC = () => {
   };
 
   // Update handler
-  const handleDeleteGroup = async () => {
-    if (!selectedGroup) return;
-    setIsDeletingGroup(true);
+  const handleDeleteTeam = async () => {
+    if (!selectedTeam) return;
+    setIsDeletingTeam(true);
 
     try {
       const { error } = await supabase
-        .from('groups')
+        .from('teams')
         .delete()
-        .eq('id', selectedGroup.id);
+        .eq('id', selectedTeam.id);
 
       if (error) throw error;
 
-      addToast('Group deleted successfully', 'success');
+      addToast('Team deleted successfully', 'success');
       setShowDeleteConfirm(false);
-      setShowGroupDetails(false);
-      fetchGroups();
+      setShowTeamDetails(false);
+      fetchTeams();
     } catch (error) {
-      console.error('Error deleting group:', error);
-      addToast('Error deleting group', 'error');
+      console.error('Error deleting team:', error);
+      addToast('Error deleting team', 'error');
     } finally {
-      setIsDeletingGroup(false);
+      setIsDeletingTeam(false);
     }
   };
 
   // Add new handlers
   const handleRoleChange = async (userId: string, newRole: string) => {
-    if (!selectedGroup) return;
+    if (!selectedTeam) return;
 
     try {
       const { error } = await supabase
-        .from('group_users')
+        .from('team_users')
         .update({ role: newRole })
-        .eq('group_id', selectedGroup.id)
+        .eq('team_id', selectedTeam.id)
         .eq('user_id', userId);
 
       if (error) throw error;
 
       addToast('Role updated successfully', 'success');
-      fetchGroupUsers(selectedGroup.id);
-      fetchGroups();
+      fetchTeamUsers(selectedTeam.id);
+      fetchTeams();
     } catch (error) {
       console.error('Error updating role:', error);
       addToast('Error updating role', 'error');
     }
   };
 
-  // Update handleLeaveGroup
-  const handleLeaveGroup = async () => {
-    if (!selectedGroup || !user?.id) return;
-    setIsLeavingGroup(true);
+  // Update handleLeaveTeam
+  const handleLeaveTeam = async () => {
+    if (!selectedTeam || !user?.id) return;
+    setIsLeavingTeam(true);
 
     try {
       const { error } = await supabase
-        .from('group_users')
+        .from('team_users')
         .delete()
-        .eq('group_id', selectedGroup.id)
+        .eq('team_id', selectedTeam.id)
         .eq('user_id', user.id);
 
       if (error) throw error;
 
-      addToast('Left group successfully', 'success');
+      addToast('Left team successfully', 'success');
       setShowLeaveConfirm(false);
-      setShowGroupDetails(false);
-      fetchGroups();
+      setShowTeamDetails(false);
+      fetchTeams();
     } catch (error) {
-      console.error('Error leaving group:', error);
-      addToast('Error leaving group', 'error');
+      console.error('Error leaving team:', error);
+      addToast('Error leaving team', 'error');
     } finally {
-      setIsLeavingGroup(false);
+      setIsLeavingTeam(false);
     }
   };
 
   // Add handler for removing sites
   const handleRemoveSite = async (siteId: string) => {
-    if (!selectedGroup) return;
+    if (!selectedTeam) return;
     try {
       const { error } = await supabase
         .from('sites')
@@ -342,7 +342,7 @@ const Groups: React.FC = () => {
       if (error) throw error;
 
       addToast('Site removed successfully', 'success');
-      fetchSites(selectedGroup.id);
+      fetchSites(selectedTeam.id);
     } catch (error) {
       console.error('Error removing site:', error);
       addToast('Error removing site', 'error');
@@ -357,10 +357,10 @@ const Groups: React.FC = () => {
     <>
       <Container>
         <div className="d-flex justify-content-between align-items-center mb-4">
-          <h3><i className="fas fa-users me-2"></i>My Groups</h3>
-          {!loading && groups.length > 0 && (
-            <Button onClick={() => setShowGroupForm(true)}>
-              <i className="fas fa-plus me-2"></i>Create Group
+          <h3><i className="fas fa-users me-2"></i>My Teams</h3>
+          {!loading && teams.length > 0 && (
+            <Button onClick={() => setShowTeamForm(true)}>
+              <i className="fas fa-plus me-2"></i>Create Team
             </Button>
           )}
         </div>
@@ -369,29 +369,29 @@ const Groups: React.FC = () => {
           <div className="text-center">
             <span className="spinner-border" role="status" />
           </div>
-        ) : groups.length === 0 ? (
+        ) : teams.length === 0 ? (
           <Alert variant="light" className="text-center p-5 border">
             <div className="mb-3">
               <i className="fas fa-users fa-3x text-muted"></i>
             </div>
-            <h4>No Groups Yet</h4>
+            <h4>No Teams Yet</h4>
             <p className="text-muted mb-4">
-              You haven't created or joined any groups yet. Groups help you organize your coworking spaces and members.
+              You haven't created or joined any teams yet. Teams help you organize your coworking spaces and members.
             </p>
             <Button
               variant="primary"
-              onClick={() => setShowGroupForm(true)}
+              onClick={() => setShowTeamForm(true)}
             >
-              <i className="fas fa-plus me-2"></i>Create Your First Group
+              <i className="fas fa-plus me-2"></i>Create Your First Team
             </Button>
           </Alert>
         ) : (
           <div className="row g-4">
-            {groups.map(group => (
-              <div key={group.id} className="col-md-6 col-lg-4">
-                <GroupCard
-                  group={group}
-                  onManage={handleGroupDetailsOpen}
+            {teams.map(team => (
+              <div key={team.id} className="col-md-6 col-lg-4">
+                <TeamCard
+                  team={team}
+                  onManage={handleTeamDetailsOpen}
                 />
               </div>
             ))}
@@ -399,26 +399,26 @@ const Groups: React.FC = () => {
         )}
       </Container>
 
-      {/* Create/Edit Group Offcanvas */}
-      <GroupCreateForm
-        show={showGroupForm}
-        onHide={() => setShowGroupForm(false)}
-        onGroupCreated={fetchGroups}
+      {/* Create/Edit Team Offcanvas */}
+      <TeamCreateForm
+        show={showTeamForm}
+        onHide={() => setShowTeamForm(false)}
+        onTeamCreated={fetchTeams}
         userId={user?.id}
       />
 
-      {/* Group Details Offcanvas */}
-      <GroupDetailsOffcanvas
-        show={showGroupDetails}
-        onHide={handleGroupDetailsClose}
-        selectedGroup={selectedGroup}
-        groupUsers={groupUsers}
+      {/* Team Details Offcanvas */}
+      <TeamDetailsOffcanvas
+        show={showTeamDetails}
+        onHide={handleTeamDetailsClose}
+        selectedTeam={selectedTeam}
+        teamUsers={teamUsers}
         onEditClick={() => setShowEditForm(true)}
         onDeleteClick={() => setShowDeleteConfirm(true)}
         onAddMemberClick={() => setShowAddMember(true)}
         onRemoveUser={handleRemoveUser}
         onRoleChange={handleRoleChange}
-        onLeaveGroup={handleLeaveGroup}
+        onLeaveTeam={handleLeaveTeam}
         rolePriority={rolePriority}
         onShowLeaveConfirm={() => setShowLeaveConfirm(true)}
         sites={sites} // Add this line
@@ -437,7 +437,7 @@ const Groups: React.FC = () => {
         placement="end"
       >
         <Offcanvas.Header closeButton>
-          <Offcanvas.Title>Add Member to {selectedGroup?.name}</Offcanvas.Title>
+          <Offcanvas.Title>Add Member to {selectedTeam?.name}</Offcanvas.Title>
         </Offcanvas.Header>
         <Offcanvas.Body>
           <Form>
@@ -486,73 +486,73 @@ const Groups: React.FC = () => {
       </Offcanvas>
 
       {/* Add new Delete Confirmation Offcanvas */}
-      <GroupDeleteConfirmation
+      <TeamDeleteConfirmation
         show={showDeleteConfirm}
         onHide={() => setShowDeleteConfirm(false)}
-        groupName={selectedGroup?.name || ''}
-        groupDescription={selectedGroup?.description || ''}
-        groupUsers={groupUsers}
-        isDeleting={isDeletingGroup}
-        onConfirmDelete={handleDeleteGroup}
+        teamName={selectedTeam?.name || ''}
+        teamDescription={selectedTeam?.description || ''}
+        teamUsers={teamUsers}
+        isDeleting={isDeletingTeam}
+        onConfirmDelete={handleDeleteTeam}
       />
 
       {/* Add Member Component */}
-      <GroupAddMember
+      <TeamAddMember
         show={showAddMember}
         onHide={() => setShowAddMember(false)}
-        selectedGroup={selectedGroup}
+        selectedTeam={selectedTeam}
         onMemberAdded={() => {
-          fetchGroupUsers(selectedGroup?.id || '');
-          fetchGroups();
+          fetchTeamUsers(selectedTeam?.id || '');
+          fetchTeams();
         }}
       />
 
-      <GroupEditForm
+      <TeamEditForm
         show={showEditForm}
         onHide={() => setShowEditForm(false)}
-        group={selectedGroup}
-        onGroupUpdated={() => {
-          // First update the selected group with new values
-          if (selectedGroup) {
-            setSelectedGroup({
-              ...selectedGroup,
-              name: selectedGroup.name,
-              description: selectedGroup.description
+        team={selectedTeam}
+        onTeamUpdated={() => {
+          // First update the selected team with new values
+          if (selectedTeam) {
+            setSelectedTeam({
+              ...selectedTeam,
+              name: selectedTeam.name,
+              description: selectedTeam.description
             });
           }
           // Then refresh the data
-          fetchGroups();
-          fetchGroupUsers(selectedGroup?.id || '');
+          fetchTeams();
+          fetchTeamUsers(selectedTeam?.id || '');
         }}
       />
 
-      <GroupLeaveConfirmation
+      <TeamLeaveConfirmation
         show={showLeaveConfirm}
         onHide={() => setShowLeaveConfirm(false)}
-        groupName={selectedGroup?.name || ''}
-        groupDescription={selectedGroup?.description || ''}
-        isLeaving={isLeavingGroup}
-        onConfirmLeave={handleLeaveGroup}
+        teamName={selectedTeam?.name || ''}
+        teamDescription={selectedTeam?.description || ''}
+        isLeaving={isLeavingTeam}
+        onConfirmLeave={handleLeaveTeam}
       />
 
-      <GroupAddSite
+      <TeamAddSite
         show={showAddSite}
         onHide={() => setShowAddSite(false)}
-        group={selectedGroup}
+        team={selectedTeam}
         onSiteAdded={() => {
-          fetchSites(selectedGroup?.id || '');
+          fetchSites(selectedTeam?.id || '');
         }}
       />
 
-      <GroupEditSite
+      <TeamEditSite
           show={showEditSite}
           onHide={() => setShowEditSite(false)}
           site={selectedSite}
           onSiteUpdated={() => {
-              fetchSites(selectedGroup?.id || '');
+              fetchSites(selectedTeam?.id || '');
           }}
           onSiteDeleted={() => {
-              fetchSites(selectedGroup?.id || '');
+              fetchSites(selectedTeam?.id || '');
               setSelectedSite(null); // Clear the selected site
               setShowEditSite(false); // Close the edit site offcanvas
           }}
@@ -562,4 +562,4 @@ const Groups: React.FC = () => {
   );
 };
 
-export default Groups;
+export default Teams;

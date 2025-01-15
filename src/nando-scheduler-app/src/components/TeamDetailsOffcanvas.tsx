@@ -1,32 +1,32 @@
 import React, { useState } from 'react';
 import { Offcanvas, Form, Button, ListGroup, Badge } from 'react-bootstrap';
-import { Group, GroupUser } from '../types/group';
+import { Team, TeamUser } from '../types/team';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../AuthContext';
 import { useToast } from '../ToastContext';
-import { GroupMemberEdit } from './GroupMemberEdit';
+import { TeamMemberEdit } from './TeamMemberEdit';
 import { Site } from '../types/site';
 
 interface Props {
     show: boolean;
     onHide: () => void;
-    selectedGroup: Group | null;
-    groupUsers: GroupUser[];
-    editingGroup: {
+    selectedTeam: Team | null;
+    teamUsers: TeamUser[];
+    editingTeam: {
         name: string;
         description: string;
     };
-    setEditingGroup: React.Dispatch<React.SetStateAction<{
+    setEditingTeam: React.Dispatch<React.SetStateAction<{
         name: string;
         description: string;
     }>>;
     isSavingChanges: boolean;
-    onUpdateGroup: () => Promise<void>;
+    onUpdateTeam: () => Promise<void>;
     onDeleteClick: () => void;
     onAddMemberClick: () => void;
     onRemoveUser: (userId: string) => Promise<void>;
     onRoleChange: (userId: string, newRole: string) => Promise<void>;
-    onLeaveGroup: () => Promise<void>;
+    onLeaveTeam: () => Promise<void>;
     rolePriority: Record<string, number>;
     onEditClick: () => void;
     onShowLeaveConfirm: () => void;
@@ -37,20 +37,20 @@ interface Props {
     onRemoveSite: (siteId: string) => Promise<void>;
 }
 
-export const GroupDetailsOffcanvas: React.FC<Props> = ({
+export const TeamDetailsOffcanvas: React.FC<Props> = ({
     show,
     onHide,
-    selectedGroup,
-    groupUsers,
-    editingGroup,
-    setEditingGroup,
+    selectedTeam,
+    teamUsers,
+    editingTeam,
+    setEditingTeam,
     isSavingChanges,
-    onUpdateGroup,
+    onUpdateTeam,
     onDeleteClick,
     onAddMemberClick,
     onRemoveUser,
     onRoleChange,
-    onLeaveGroup,
+    onLeaveTeam,
     rolePriority,
     onEditClick,
     onShowLeaveConfirm,
@@ -64,17 +64,17 @@ export const GroupDetailsOffcanvas: React.FC<Props> = ({
     const isOwner = (role?: string) => role === 'owner';
 
     // Add state for member editing
-    const [editingMember, setEditingMember] = useState<GroupUser | null>(null);
+    const [editingMember, setEditingMember] = useState<TeamUser | null>(null);
 
     return (
         <Offcanvas show={show} onHide={onHide} placement="end">
             <Offcanvas.Header closeButton className="border-bottom">
                 <div>
                     <Offcanvas.Title>
-                        <i className="fas fa-cog me-2"></i>Manage Group
+                        <i className="fas fa-cog me-2"></i>Manage Team
                     </Offcanvas.Title>
                     <div className="text-muted" style={{ fontSize: '0.85em' }}>
-                        Use the area below to manage the current group.
+                        Use the area below to manage the current team.
                     </div>
                 </div>
             </Offcanvas.Header>
@@ -82,10 +82,10 @@ export const GroupDetailsOffcanvas: React.FC<Props> = ({
                 <div className="mb-4">
                     <div className="d-flex justify-content-between align-items-start">
                         <div>
-                            <h5>{selectedGroup?.name}</h5>
-                            <p className="text-muted">{selectedGroup?.description}</p>
+                            <h5>{selectedTeam?.name}</h5>
+                            <p className="text-muted">{selectedTeam?.description}</p>
                         </div>
-                        {isOwner(selectedGroup?.user_role) && (
+                        {isOwner(selectedTeam?.user_role) && (
                             <Button
                                 variant="outline-primary"
                                 size="sm"
@@ -101,54 +101,54 @@ export const GroupDetailsOffcanvas: React.FC<Props> = ({
 
                 <h5 className="mt-4"><i className="fas fa-users me-2"></i>Members</h5>
                 <ListGroup className="mb-3">
-                    {groupUsers
+                    {teamUsers
                         .sort((a, b) => {
                             const roleDiff = rolePriority[a.role as keyof typeof rolePriority] -
                                 rolePriority[b.role as keyof typeof rolePriority];
                             return roleDiff === 0 ? a.email.localeCompare(b.email) : roleDiff;
                         })
-                        .map(groupUser => (
+                        .map(teamUser => (
                             <ListGroup.Item
-                                key={groupUser.id}
+                                key={teamUser.id}
                                 className="d-flex justify-content-between align-items-center"
                             >
                                 <div>
-                                    <div>{groupUser.email}</div>
+                                    <div>{teamUser.email}</div>
                                     <Badge
-                                        bg={groupUser.role === 'owner' ? 'primary' :
-                                            groupUser.role === 'admin' ? 'warning' :
+                                        bg={teamUser.role === 'owner' ? 'primary' :
+                                            teamUser.role === 'admin' ? 'warning' :
                                                 'info'}
-                                        text={groupUser.role === 'owner' ? undefined : 'dark'}
+                                        text={teamUser.role === 'owner' ? undefined : 'dark'}
                                     >
-                                        <i className={`fas fa-${groupUser.role === 'owner' ? 'power-off' :
-                                            groupUser.role === 'admin' ? 'lock' :
+                                        <i className={`fas fa-${teamUser.role === 'owner' ? 'power-off' :
+                                            teamUser.role === 'admin' ? 'lock' :
                                                 'user'
                                             } me-1`}></i>
-                                        {groupUser.role}
+                                        {teamUser.role}
                                     </Badge>
                                 </div>
                                 <div>
-                                    {canManageMembers(selectedGroup?.user_role) &&
-                                        groupUser.role !== 'owner' &&
-                                        groupUser.user_id !== user?.id && (
+                                    {canManageMembers(selectedTeam?.user_role) &&
+                                        teamUser.role !== 'owner' &&
+                                        teamUser.user_id !== user?.id && (
                                             <Button
                                                 variant="outline-secondary"
                                                 size="sm"
-                                                onClick={() => setEditingMember(groupUser)}
+                                                onClick={() => setEditingMember(teamUser)}
                                             >
                                                 <i className="fas fa-edit"></i>
                                             </Button>
                                         )}
 
-                                    {groupUser.user_id === user?.id ? (
-                                        groupUser.role !== 'owner' && (
+                                    {teamUser.user_id === user?.id ? (
+                                        teamUser.role !== 'owner' && (
                                             <Button
                                                 variant="outline-warning"
                                                 size="sm"
                                                 onClick={onShowLeaveConfirm}
                                             >
                                                 <i className="fas fa-sign-out-alt me-2"></i>
-                                                Leave Group
+                                                Leave Team
                                             </Button>
                                         )
                                     ) : false}
@@ -157,7 +157,7 @@ export const GroupDetailsOffcanvas: React.FC<Props> = ({
                         ))}
                 </ListGroup>
 
-                {canManageMembers(selectedGroup?.user_role) && (
+                {canManageMembers(selectedTeam?.user_role) && (
                     <div className="d-flex justify-content-end mb-3">
                         <Button
                             variant="primary"
@@ -191,7 +191,7 @@ export const GroupDetailsOffcanvas: React.FC<Props> = ({
                                     </small>
                                 </div>
                                 <div>
-                                    {canManageMembers(selectedGroup?.user_role) && (
+                                    {canManageMembers(selectedTeam?.user_role) && (
                                         <>
                                             <Button
                                                 variant="outline-secondary"
@@ -209,7 +209,7 @@ export const GroupDetailsOffcanvas: React.FC<Props> = ({
                     )}
                 </ListGroup>
 
-                {canManageMembers(selectedGroup?.user_role) && (
+                {canManageMembers(selectedTeam?.user_role) && (
                     <div className="d-flex justify-content-end mb-3">
                         <Button
                             variant="primary"
@@ -224,7 +224,7 @@ export const GroupDetailsOffcanvas: React.FC<Props> = ({
 
 
 
-                {isOwner(selectedGroup?.user_role) && (
+                {isOwner(selectedTeam?.user_role) && (
                     <>
                         <hr className="my-4 border-danger" />
                         <div className="mt-4">
@@ -233,7 +233,7 @@ export const GroupDetailsOffcanvas: React.FC<Props> = ({
                                 onClick={onDeleteClick}
                             >
                                 <i className="fas fa-trash-alt me-2"></i>
-                                Delete Group<i className="fas fa-chevron-right ms-2"></i>
+                                Delete Team<i className="fas fa-chevron-right ms-2"></i>
                             </Button>
                         </div>
                     </>
@@ -241,14 +241,14 @@ export const GroupDetailsOffcanvas: React.FC<Props> = ({
 
                 {/* Add the new edit member component at the bottom of the Offcanvas */}
                 {editingMember && (
-                    <GroupMemberEdit
+                    <TeamMemberEdit
                         show={!!editingMember}
                         onHide={() => setEditingMember(null)}
-                        groupName={selectedGroup?.name || ''}
+                        teamName={selectedTeam?.name || ''}
                         member={editingMember}
                         onRoleChange={onRoleChange}
                         onRemoveUser={onRemoveUser}
-                        currentUserRole={selectedGroup?.user_role}
+                        currentUserRole={selectedTeam?.user_role}
                     />
                 )}
             </Offcanvas.Body>

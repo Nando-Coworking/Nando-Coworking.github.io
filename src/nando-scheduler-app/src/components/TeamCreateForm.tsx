@@ -6,14 +6,14 @@ import { useToast } from '../ToastContext';
 interface Props {
   show: boolean;
   onHide: () => void;
-  onGroupCreated: () => void;
+  onTeamCreated: () => void;
   userId?: string;
 }
 
-export const GroupCreateForm: React.FC<Props> = ({
+export const TeamCreateForm: React.FC<Props> = ({
   show,
   onHide,
-  onGroupCreated,
+  onTeamCreated,
   userId
 }) => {
   const { addToast } = useToast();
@@ -41,7 +41,7 @@ export const GroupCreateForm: React.FC<Props> = ({
     setIsSaving(true);
     try {
       const { error } = await supabase
-        .rpc('create_group_with_owner', {
+        .rpc('create_team_with_owner', {
           _name: formData.name,
           _description: formData.description,
           _user_id: userId
@@ -49,14 +49,14 @@ export const GroupCreateForm: React.FC<Props> = ({
 
       if (error) throw error;
 
-      addToast('Group created successfully', 'success');
+      addToast('Team created successfully', 'success');
       onHide();
-      onGroupCreated();
+      onTeamCreated();
       setFormData({ name: '', description: '' }); // Reset form
       setValidated(false);
     } catch (error: any) {
-      console.error('Error creating group:', error);
-      addToast(error.message || 'Error creating group', 'error');
+      console.error('Error creating team:', error);
+      addToast(error.message || 'Error creating team', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -67,10 +67,10 @@ export const GroupCreateForm: React.FC<Props> = ({
       <Offcanvas.Header closeButton className="border-bottom">
         <div>
           <Offcanvas.Title>
-            <i className="fas fa-plus me-2"></i>Create New Group
+            <i className="fas fa-plus me-2"></i>Create New Team
           </Offcanvas.Title>
           <div className="text-muted" style={{ fontSize: '0.85em' }}>
-            Create a new group to manage locations and members
+            Create a new team to manage locations and members
           </div>
         </div>
       </Offcanvas.Header>
@@ -82,12 +82,12 @@ export const GroupCreateForm: React.FC<Props> = ({
               type="text"
               value={formData.name}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Enter group name"
+              placeholder="Enter team name"
               required
               isInvalid={validated && !formData.name}
             />
             <Form.Control.Feedback type="invalid">
-              Please provide a name for the group.
+              Please provide a name for the team.
             </Form.Control.Feedback>
           </Form.Group>
 
@@ -98,12 +98,12 @@ export const GroupCreateForm: React.FC<Props> = ({
               rows={3}
               value={formData.description}
               onChange={e => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Enter group description"
+              placeholder="Enter team description"
               required
               isInvalid={validated && !formData.name}
             />
             <Form.Control.Feedback type="invalid">
-              Please provide a description for the group.
+              Please provide a description for the team.
             </Form.Control.Feedback>
           </Form.Group>
 

@@ -3,19 +3,19 @@ import { Offcanvas, Form, Button } from 'react-bootstrap';
 import { supabase } from '../supabaseClient';
 import { useToast } from '../ToastContext';
 import { useAuth } from '../AuthContext'; // Add this import
-import { Group } from '../types/group';
+import { Team } from '../types/team';
 
 interface Props {
     show: boolean;
     onHide: () => void;
-    group: Group | null;
+    team: Team | null;
     onSiteAdded: () => void;
 }
 
-export const GroupAddSite: React.FC<Props> = ({
+export const TeamAddSite: React.FC<Props> = ({
     show,
     onHide,
-    group,
+    team,
     onSiteAdded
 }) => {
     const { user } = useAuth(); // Add this hook
@@ -33,42 +33,42 @@ export const GroupAddSite: React.FC<Props> = ({
     });
     const [validated, setValidated] = useState(false);
 
-    // Add useEffect and state for groups
-    const [groups, setGroups] = useState<Group[]>([]);
-    const [selectedGroupId, setSelectedGroupId] = useState('');
+    // Add useEffect and state for teams
+    const [teams, setTeams] = useState<Team[]>([]);
+    const [selectedTeamId, setSelectedTeamId] = useState('');
 
     useEffect(() => {
-        const fetchGroups = async () => {
+        const fetchTeams = async () => {
             try {
                 if (!user?.id) return; // Add this check
                 
                 const { data, error } = await supabase
-                    .rpc('get_group_with_member_count', {
+                    .rpc('get_team_with_member_count', {
                         _user_id: user.id
                     });
 
                 if (error) throw error;
-                setGroups(data.filter(g => ['owner', 'admin'].includes(g.user_role || '')));
+                setTeams(data.filter(g => ['owner', 'admin'].includes(g.user_role || '')));
             } catch (error) {
-                console.error('Error fetching groups:', error);
-                addToast('Error fetching groups', 'error');
+                console.error('Error fetching teams:', error);
+                addToast('Error fetching teams', 'error');
             }
         };
 
-        if (!group) { // Only fetch groups if no group was passed in
-            fetchGroups();
+        if (!team) { // Only fetch teams if no team was passed in
+            fetchTeams();
         } else {
-            setSelectedGroupId(group.id);
+            setSelectedTeamId(team.id);
         }
-    }, [group, user]); // Add user to dependencies
+    }, [team, user]); // Add user to dependencies
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
         setValidated(true);
 
-        const groupId = group?.id || selectedGroupId;
-        if (!groupId) {
-            addToast('Please select a group', 'error');
+        const teamId = team?.id || selectedTeamId;
+        if (!teamId) {
+            addToast('Please select a team', 'error');
             return;
         }
 
@@ -84,7 +84,7 @@ export const GroupAddSite: React.FC<Props> = ({
                 .from('sites')
                 .insert([{
                     ...formData,
-                    group_id: groupId,
+                    team_id: teamId,
                     slug_name: formData.name.toLowerCase().replace(/\s+/g, '-')
                 }]);
 
@@ -119,33 +119,33 @@ export const GroupAddSite: React.FC<Props> = ({
                         <i className="fas fa-building me-2"></i>Add Location
                     </Offcanvas.Title>
                     <div className="text-muted" style={{ fontSize: '0.85em' }}>
-                        {group ? 
-                            `Add a new location to ${group.name}` : 
-                            'Add a new location to one of your groups'
+                        {team ? 
+                            `Add a new location to ${team.name}` : 
+                            'Add a new location to one of your teams'
                         }
                     </div>
                 </div>
             </Offcanvas.Header>
             <Offcanvas.Body>
                 <Form noValidate validated={validated} onSubmit={handleSubmit}>
-                    {!group && (
+                    {!team && (
                         <Form.Group className="mb-3">
-                            <Form.Label>Group <span className="text-danger">*</span></Form.Label>
+                            <Form.Label>Team <span className="text-danger">*</span></Form.Label>
                             <Form.Select
-                                value={selectedGroupId}
-                                onChange={(e) => setSelectedGroupId(e.target.value)}
+                                value={selectedTeamId}
+                                onChange={(e) => setSelectedTeamId(e.target.value)}
                                 required
-                                isInvalid={validated && !selectedGroupId}
+                                isInvalid={validated && !selectedTeamId}
                             >
-                                <option value="">Select a group...</option>
-                                {groups.map(g => (
+                                <option value="">Select a team...</option>
+                                {teams.map(g => (
                                     <option key={g.id} value={g.id}>
                                         {g.name}
                                     </option>
                                 ))}
                             </Form.Select>
                             <Form.Control.Feedback type="invalid">
-                                Please select a group.
+                                Please select a team.
                             </Form.Control.Feedback>
                         </Form.Group>
                     )}

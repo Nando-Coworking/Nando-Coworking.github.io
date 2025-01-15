@@ -22,7 +22,7 @@ export const SiteCard: React.FC<Props> = ({ site, onManage, userRole }) => {
                         style={{ fontSize: '0.65em' }}
                     >
                         <i className={`fas fa-users me-1`}></i>
-                        {site.groups?.name || 'Unknown Group'}
+                        {site.teams?.name || 'Unknown Team'}
                     </Badge>
                 </Card.Title>
                 <Card.Text className="text-truncate-2">{site.description}</Card.Text>

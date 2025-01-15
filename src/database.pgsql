@@ -9,16 +9,16 @@ BEGIN
     IF EXISTS (
         SELECT 1 
         FROM pg_trigger 
-        WHERE tgname = 'update_group_updated_at'
+        WHERE tgname = 'update_team_updated_at'
     ) THEN
-        DROP TRIGGER update_group_updated_at ON public.groups;
+        DROP TRIGGER update_team_updated_at ON public.teams;
     END IF;
     IF EXISTS (
         SELECT 1 
         FROM pg_trigger 
-        WHERE tgname = 'update_group_users_updated_at'
+        WHERE tgname = 'update_team_users_updated_at'
     ) THEN
-        DROP TRIGGER update_group_users_updated_at ON public.group_users;
+        DROP TRIGGER update_team_users_updated_at ON public.team_users;
     END IF;
     IF EXISTS (
         SELECT 1 
@@ -87,15 +87,15 @@ DROP TABLE IF EXISTS public.reservations CASCADE;
 DROP TABLE IF EXISTS public.amenities CASCADE;
 DROP TABLE IF EXISTS public.resources CASCADE;
 DROP TABLE IF EXISTS public.sites CASCADE;
-DROP TABLE IF EXISTS public.group_users CASCADE;
-DROP TABLE IF EXISTS public.groups CASCADE;
+DROP TABLE IF EXISTS public.team_users CASCADE;
+DROP TABLE IF EXISTS public.teams CASCADE;
 
 -- =====================================================
--- 1. Create the "groups" and "group_users" tables
+-- 1. Create the "teams" and "team_users" tables
 --    (For organizational ownership).
 -- =====================================================
 
-CREATE TABLE public.groups (
+CREATE TABLE public.teams (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     name varchar(255) NOT NULL,
     description text,
@@ -103,40 +103,40 @@ CREATE TABLE public.groups (
     updated_at timestamp with time zone DEFAULT now()
 );
 
--- A table mapping which users (from auth.users) belong to which group,
+-- A table mapping which users (from auth.users) belong to which team,
 -- with a role (e.g. 'owner', 'admin', 'member', etc.).
-CREATE TABLE public.group_users (
+CREATE TABLE public.team_users (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    group_id uuid REFERENCES public.groups(id) ON DELETE CASCADE,
+    team_id uuid REFERENCES public.teams(id) ON DELETE CASCADE,
     user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
     role varchar(50) NOT NULL DEFAULT 'member',
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
-    UNIQUE (group_id, user_id)
+    UNIQUE (team_id, user_id)
 );
 
 -- =====================================================
--- Create the is_group_admin function
+-- Create the is_team_admin function
 -- =====================================================
 
-CREATE OR REPLACE FUNCTION is_group_admin(_group_id uuid, _uid uuid)
+CREATE OR REPLACE FUNCTION is_team_admin(_team_id uuid, _uid uuid)
   RETURNS boolean
   LANGUAGE sql
   SECURITY DEFINER
 AS $$
   SELECT EXISTS (
     SELECT 1
-    FROM public.group_users
-    WHERE group_id = _group_id
+    FROM public.team_users
+    WHERE team_id = _team_id
       AND user_id = _uid
       AND role IN ('owner','admin')
   );
 $$;
 
--- Add this after the is_group_admin function and before the policies
+-- Add this after the is_team_admin function and before the policies
 
--- Function to create a group and make creator the owner
-CREATE OR REPLACE FUNCTION create_group_with_owner(
+-- Function to create a team and make creator the owner
+CREATE OR REPLACE FUNCTION create_team_with_owner(
   _name varchar,
   _description text,
   _user_id uuid
@@ -146,29 +146,29 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  _group_id uuid;
+  _team_id uuid;
 BEGIN
-  -- Insert the group
-  INSERT INTO groups (name, description)
+  -- Insert the team
+  INSERT INTO teams (name, description)
   VALUES (_name, _description)
-  RETURNING id INTO _group_id;
+  RETURNING id INTO _team_id;
 
   -- Make the creator an owner
-  INSERT INTO group_users (group_id, user_id, role)
-  VALUES (_group_id, _user_id, 'owner');
+  INSERT INTO team_users (team_id, user_id, role)
+  VALUES (_team_id, _user_id, 'owner');
 
-  RETURN _group_id;
+  RETURN _team_id;
 END;
 $$;
 
 -- =====================================================
 -- 2. Create the "sites" table
---    (Physical coworking locations, owned by a group).
+--    (Physical coworking locations, owned by a team).
 -- =====================================================
 
 CREATE TABLE public.sites (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    group_id uuid REFERENCES public.groups(id) ON DELETE CASCADE,
+    team_id uuid REFERENCES public.teams(id) ON DELETE CASCADE,
     name varchar(255) NOT NULL,
     description text,
     address1 varchar(255),
@@ -256,8 +256,8 @@ CREATE TABLE public.reservations (
 -- 6. Enable Row Level Security (RLS) on all tables.
 -- =====================================================
 
-ALTER TABLE public.groups ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.group_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.teams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.team_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.resources ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.amenities ENABLE ROW LEVEL SECURITY;
@@ -278,13 +278,13 @@ $$ LANGUAGE plpgsql;
 
 -- Attach the trigger to each table that needs timestamp tracking
 
-CREATE TRIGGER update_group_updated_at
-BEFORE UPDATE ON public.groups
+CREATE TRIGGER update_team_updated_at
+BEFORE UPDATE ON public.teams
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at();
 
-CREATE TRIGGER update_group_users_updated_at
-BEFORE UPDATE ON public.group_users
+CREATE TRIGGER update_team_users_updated_at
+BEFORE UPDATE ON public.team_users
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at();
 
@@ -319,113 +319,113 @@ EXECUTE FUNCTION update_updated_at();
 -- =====================================================
 
 -- -----------------------------------------------------
--- groups
+-- teams
 -- -----------------------------------------------------
--- Only group owners/members can SELECT or modify the group row
+-- Only team owners/members can SELECT or modify the team row
 
-CREATE POLICY "group_select_policy"
-ON public.groups
+CREATE POLICY "team_select_policy"
+ON public.teams
 FOR SELECT
 TO authenticated
 USING (
-   -- user is in 'group_users' for this group
+   -- user is in 'team_users' for this team
    EXISTS (
      SELECT 1 
-     FROM public.group_users 
-     WHERE group_users.group_id = groups.id
-       AND group_users.user_id = auth.uid()
+     FROM public.team_users 
+     WHERE team_users.team_id = teams.id
+       AND team_users.user_id = auth.uid()
    )
 );
 
 -- First, drop existing policies
-DROP POLICY IF EXISTS "group_insert_policy" ON public.groups;
-DROP POLICY IF EXISTS "group_users_insert_policy" ON public.group_users;
+DROP POLICY IF EXISTS "team_insert_policy" ON public.teams;
+DROP POLICY IF EXISTS "team_users_insert_policy" ON public.team_users;
 
--- Modified groups insert policy - simpler and more permissive for creation
-CREATE POLICY "group_insert_policy"
-ON public.groups
+-- Modified teams insert policy - simpler and more permissive for creation
+CREATE POLICY "team_insert_policy"
+ON public.teams
 FOR INSERT
 TO authenticated
-WITH CHECK (false);  -- Force group creation through the function
+WITH CHECK (false);  -- Force team creation through the function
 
--- Modified group_users insert policy - allow self-insertion as owner
-CREATE POLICY "group_users_insert_policy"
-ON public.group_users
+-- Modified team_users insert policy - allow self-insertion as owner
+CREATE POLICY "team_users_insert_policy"
+ON public.team_users
 FOR INSERT
 TO authenticated
 WITH CHECK (
-   -- Allow user to insert themselves as owner when creating group
+   -- Allow user to insert themselves as owner when creating team
    (user_id = auth.uid() AND role = 'owner')
    OR
-   -- OR allow existing group admins to add other users
+   -- OR allow existing team admins to add other users
    EXISTS (
      SELECT 1 
-     FROM public.group_users AS me
-     WHERE me.group_id = group_users.group_id
+     FROM public.team_users AS me
+     WHERE me.team_id = team_users.team_id
        AND me.user_id = auth.uid()
        AND me.role IN ('owner', 'admin')
    )
 );
 
-CREATE POLICY "group_update_policy"
-ON public.groups
+CREATE POLICY "team_update_policy"
+ON public.teams
 FOR UPDATE
 TO authenticated
 USING (
    EXISTS (
      SELECT 1 
-     FROM public.group_users 
-     WHERE group_users.group_id = groups.id
-       AND group_users.user_id = auth.uid()
+     FROM public.team_users 
+     WHERE team_users.team_id = teams.id
+       AND team_users.user_id = auth.uid()
        -- Possibly enforce role = 'owner' or 'admin'
    )
 )
 WITH CHECK (
    EXISTS (
      SELECT 1 
-     FROM public.group_users 
-     WHERE group_users.group_id = groups.id
-       AND group_users.user_id = auth.uid()
+     FROM public.team_users 
+     WHERE team_users.team_id = teams.id
+       AND team_users.user_id = auth.uid()
    )
 );
 
-CREATE POLICY "group_delete_policy"
-ON public.groups
+CREATE POLICY "team_delete_policy"
+ON public.teams
 FOR DELETE
 TO authenticated
 USING (
    EXISTS (
      SELECT 1 
-     FROM public.group_users 
-     WHERE group_users.group_id = groups.id
-       AND group_users.user_id = auth.uid()
+     FROM public.team_users 
+     WHERE team_users.team_id = teams.id
+       AND team_users.user_id = auth.uid()
        -- Possibly enforce role = 'owner'
    )
 );
 
 -- -----------------------------------------------------
--- group_users
+-- team_users
 -- -----------------------------------------------------
--- Only group members with certain roles can see or modify membership
+-- Only team members with certain roles can see or modify membership
 
-CREATE POLICY "group_users_select_policy"
-ON public.group_users
+CREATE POLICY "team_users_select_policy"
+ON public.team_users
 FOR SELECT
 TO authenticated
 USING (
   user_id = auth.uid()
-  OR is_group_admin(group_users.group_id, auth.uid())
+  OR is_team_admin(team_users.team_id, auth.uid())
 );
 
-CREATE POLICY "group_users_update_policy"
-ON public.group_users
+CREATE POLICY "team_users_update_policy"
+ON public.team_users
 FOR UPDATE
 TO authenticated
 USING (
    EXISTS (
      SELECT 1 
-     FROM public.group_users AS me
-     WHERE me.group_id = group_users.group_id
+     FROM public.team_users AS me
+     WHERE me.team_id = team_users.team_id
        AND me.user_id = auth.uid()
        AND me.role IN ('owner', 'admin')
    )
@@ -433,26 +433,26 @@ USING (
 WITH CHECK (
    EXISTS (
      SELECT 1 
-     FROM public.group_users AS me
-     WHERE me.group_id = group_users.group_id
+     FROM public.team_users AS me
+     WHERE me.team_id = team_users.team_id
        AND me.user_id = auth.uid()
        AND me.role IN ('owner', 'admin')
    )
 );
 
-CREATE POLICY "group_users_delete_policy"
-ON public.group_users
+CREATE POLICY "team_users_delete_policy"
+ON public.team_users
 FOR DELETE
 TO authenticated
 USING (
    -- Allow users to remove themselves (except owners)
    (user_id = auth.uid() AND role != 'owner')
    OR
-   -- OR allow group admins to remove others  
+   -- OR allow team admins to remove others  
    EXISTS (
      SELECT 1 
-     FROM public.group_users AS me
-     WHERE me.group_id = group_users.group_id
+     FROM public.team_users AS me
+     WHERE me.team_id = team_users.team_id
        AND me.user_id = auth.uid()
        AND me.role IN ('owner', 'admin')
    )
@@ -461,7 +461,7 @@ USING (
 -- -----------------------------------------------------
 -- sites
 -- -----------------------------------------------------
--- Only group members can see the site. Only admins can modify.
+-- Only team members can see the site. Only admins can modify.
 
 CREATE POLICY "sites_select_policy"
 ON public.sites
@@ -470,9 +470,9 @@ TO authenticated
 USING (
    EXISTS (
      SELECT 1
-     FROM public.group_users
-     WHERE group_users.group_id = sites.group_id
-       AND group_users.user_id = auth.uid()
+     FROM public.team_users
+     WHERE team_users.team_id = sites.team_id
+       AND team_users.user_id = auth.uid()
    )
 );
 
@@ -481,13 +481,13 @@ ON public.sites
 FOR INSERT
 TO authenticated
 WITH CHECK (
-   -- user can create a site only if they're an admin in the group
+   -- user can create a site only if they're an admin in the team
    EXISTS (
      SELECT 1
-     FROM public.group_users
-     WHERE group_users.group_id = sites.group_id
-       AND group_users.user_id = auth.uid()
-       AND group_users.role IN ('owner', 'admin')
+     FROM public.team_users
+     WHERE team_users.team_id = sites.team_id
+       AND team_users.user_id = auth.uid()
+       AND team_users.role IN ('owner', 'admin')
    )
 );
 
@@ -498,19 +498,19 @@ TO authenticated
 USING (
    EXISTS (
      SELECT 1
-     FROM public.group_users
-     WHERE group_users.group_id = sites.group_id
-       AND group_users.user_id = auth.uid()
-       AND group_users.role IN ('owner', 'admin')
+     FROM public.team_users
+     WHERE team_users.team_id = sites.team_id
+       AND team_users.user_id = auth.uid()
+       AND team_users.role IN ('owner', 'admin')
    )
 )
 WITH CHECK (
    EXISTS (
      SELECT 1
-     FROM public.group_users
-     WHERE group_users.group_id = sites.group_id
-       AND group_users.user_id = auth.uid()
-       AND group_users.role IN ('owner', 'admin')
+     FROM public.team_users
+     WHERE team_users.team_id = sites.team_id
+       AND team_users.user_id = auth.uid()
+       AND team_users.role IN ('owner', 'admin')
    )
 );
 
@@ -521,17 +521,17 @@ TO authenticated
 USING (
    EXISTS (
      SELECT 1
-     FROM public.group_users
-     WHERE group_users.group_id = sites.group_id
-       AND group_users.user_id = auth.uid()
-       AND group_users.role IN ('owner','admin')
+     FROM public.team_users
+     WHERE team_users.team_id = sites.team_id
+       AND team_users.user_id = auth.uid()
+       AND team_users.role IN ('owner','admin')
    )
 );
 
 -- -----------------------------------------------------
 -- resources
 -- -----------------------------------------------------
--- Similar pattern: only group members can see a resource, only admins can modify.
+-- Similar pattern: only team members can see a resource, only admins can modify.
 
 CREATE POLICY "resources_select_policy"
 ON public.resources
@@ -541,9 +541,9 @@ USING (
    EXISTS (
      SELECT 1
      FROM public.sites
-     JOIN public.group_users ON group_users.group_id = sites.group_id
+     JOIN public.team_users ON team_users.team_id = sites.team_id
      WHERE sites.id = resources.site_id
-       AND group_users.user_id = auth.uid()
+       AND team_users.user_id = auth.uid()
    )
 );
 
@@ -555,10 +555,10 @@ WITH CHECK (
    EXISTS (
      SELECT 1
      FROM public.sites
-     JOIN public.group_users ON group_users.group_id = sites.group_id
+     JOIN public.team_users ON team_users.team_id = sites.team_id
      WHERE sites.id = resources.site_id
-       AND group_users.user_id = auth.uid()
-       AND group_users.role IN ('owner','admin')
+       AND team_users.user_id = auth.uid()
+       AND team_users.role IN ('owner','admin')
    )
 );
 
@@ -570,20 +570,20 @@ USING (
    EXISTS (
      SELECT 1
      FROM public.sites
-     JOIN public.group_users ON group_users.group_id = sites.group_id
+     JOIN public.team_users ON team_users.team_id = sites.team_id
      WHERE sites.id = resources.site_id
-       AND group_users.user_id = auth.uid()
-       AND group_users.role IN ('owner','admin')
+       AND team_users.user_id = auth.uid()
+       AND team_users.role IN ('owner','admin')
    )
 )
 WITH CHECK (
    EXISTS (
      SELECT 1
      FROM public.sites
-     JOIN public.group_users ON group_users.group_id = sites.group_id
+     JOIN public.team_users ON team_users.team_id = sites.team_id
      WHERE sites.id = resources.site_id
-       AND group_users.user_id = auth.uid()
-       AND group_users.role IN ('owner','admin')
+       AND team_users.user_id = auth.uid()
+       AND team_users.role IN ('owner','admin')
    )
 );
 
@@ -595,17 +595,17 @@ USING (
    EXISTS (
      SELECT 1
      FROM public.sites
-     JOIN public.group_users ON group_users.group_id = sites.group_id
+     JOIN public.team_users ON team_users.team_id = sites.team_id
      WHERE sites.id = resources.site_id
-       AND group_users.user_id = auth.uid()
-       AND group_users.role IN ('owner', 'admin')
+       AND team_users.user_id = auth.uid()
+       AND team_users.role IN ('owner', 'admin')
    )
 );
 
 -- -----------------------------------------------------
 -- amenities
 -- -----------------------------------------------------
--- Potentially any group might want to define an amenity. Or you might 
+-- Potentially any team might want to define an amenity. Or you might 
 -- treat amenities as universal. Example policy: let any authenticated user SELECT, 
 -- only admins insert new amenities (adjust as needed).
 
@@ -652,9 +652,9 @@ USING (
      SELECT 1
      FROM public.resources
      JOIN public.sites ON sites.id = resources.site_id
-     JOIN public.group_users ON group_users.group_id = sites.group_id
+     JOIN public.team_users ON team_users.team_id = sites.team_id
      WHERE resources.id = resource_amenities.resource_id
-       AND group_users.user_id = auth.uid()
+       AND team_users.user_id = auth.uid()
    )
 );
 
@@ -667,10 +667,10 @@ WITH CHECK (
      SELECT 1
      FROM public.resources
      JOIN public.sites ON sites.id = resources.site_id
-     JOIN public.group_users ON group_users.group_id = sites.group_id
+     JOIN public.team_users ON team_users.team_id = sites.team_id
      WHERE resources.id = resource_amenities.resource_id
-       AND group_users.user_id = auth.uid()
-       AND group_users.role IN ('owner','admin')
+       AND team_users.user_id = auth.uid()
+       AND team_users.role IN ('owner','admin')
    )
 );
 
@@ -683,10 +683,10 @@ USING (
      SELECT 1
      FROM public.resources
      JOIN public.sites ON sites.id = resources.site_id
-     JOIN public.group_users ON group_users.group_id = sites.group_id
+     JOIN public.team_users ON team_users.team_id = sites.team_id
      WHERE resources.id = resource_amenities.resource_id
-       AND group_users.user_id = auth.uid()
-       AND group_users.role IN ('owner','admin')
+       AND team_users.user_id = auth.uid()
+       AND team_users.role IN ('owner','admin')
    )
 )
 WITH CHECK (
@@ -694,10 +694,10 @@ WITH CHECK (
      SELECT 1
      FROM public.resources
      JOIN public.sites ON sites.id = resources.site_id
-     JOIN public.group_users ON group_users.group_id = sites.group_id
+     JOIN public.team_users ON team_users.team_id = sites.team_id
      WHERE resources.id = resource_amenities.resource_id
-       AND group_users.user_id = auth.uid()
-       AND group_users.role IN ('owner','admin')
+       AND team_users.user_id = auth.uid()
+       AND team_users.role IN ('owner','admin')
    )
 );
 
@@ -710,25 +710,25 @@ USING (
      SELECT 1
      FROM public.resources
      JOIN public.sites ON sites.id = resources.site_id
-     JOIN public.group_users ON group_users.group_id = sites.group_id
+     JOIN public.team_users ON team_users.team_id = sites.team_id
      WHERE resources.id = resource_amenities.resource_id
-       AND group_users.user_id = auth.uid()
-       AND group_users.role IN ('owner')
+       AND team_users.user_id = auth.uid()
+       AND team_users.role IN ('owner')
    )
 );
 
 -- -----------------------------------------------------
 -- reservations
 -- -----------------------------------------------------
--- 1) Only group members can see that the reservation exists (i.e. resource is booked).
+-- 1) Only team members can see that the reservation exists (i.e. resource is booked).
 -- 2) The user who owns the reservation sees the full details (title, description, etc.).
--- 3) Another group member sees that the resource is booked but *not* the private fields
+-- 3) Another team member sees that the resource is booked but *not* the private fields
 --    (unless we choose to grant them).
 -- 4) Possibly, participants also see details.
 
 -- We'll create two separate policies:
 --   a) SELECT: "Can see minimal or full detail"
---   b) Insert/Update/Delete: only the user or group admins.
+--   b) Insert/Update/Delete: only the user or team admins.
 
 CREATE POLICY "reservations_select_policy"
 ON public.reservations
@@ -739,15 +739,15 @@ USING (
   -- 1) The user own this reservation, or
   user_id = auth.uid()
   OR
-  -- 2) They are an admin of the corresponding group
+  -- 2) They are an admin of the corresponding team
   EXISTS (
     SELECT 1
     FROM public.resources
     JOIN public.sites ON sites.id = resources.site_id
-    JOIN public.group_users ON group_users.group_id = sites.group_id
+    JOIN public.team_users ON team_users.team_id = sites.team_id
     WHERE resources.id = reservations.resource_id
-      AND group_users.user_id = auth.uid()
-      AND group_users.role IN ('owner','admin')
+      AND team_users.user_id = auth.uid()
+      AND team_users.role IN ('owner','admin')
   )
   OR
   -- 3) This user’s email appears in the participants array
@@ -759,15 +759,15 @@ ON public.reservations
 FOR INSERT
 TO authenticated
 WITH CHECK (
-  -- The user can create a reservation if they are a group member
+  -- The user can create a reservation if they are a team member
   -- or if there's no membership requirement. Adjust as needed:
   EXISTS (
     SELECT 1
     FROM public.resources
     JOIN public.sites ON sites.id = resources.site_id
-    JOIN public.group_users ON group_users.group_id = sites.group_id
+    JOIN public.team_users ON team_users.team_id = sites.team_id
     WHERE resources.id = reservations.resource_id
-      AND group_users.user_id = auth.uid()
+      AND team_users.user_id = auth.uid()
   )
   AND (user_id = auth.uid())  -- typically the user booking is themselves
 );
@@ -780,15 +780,15 @@ USING (
   -- The user must either be the reservation owner
   user_id = auth.uid()
   OR
-  -- or an admin in the group
+  -- or an admin in the team
   EXISTS (
     SELECT 1
     FROM public.resources
     JOIN public.sites ON sites.id = resources.site_id
-    JOIN public.group_users ON group_users.group_id = sites.group_id
+    JOIN public.team_users ON team_users.team_id = sites.team_id
     WHERE resources.id = reservations.resource_id
-      AND group_users.user_id = auth.uid()
-      AND group_users.role IN ('owner','admin')
+      AND team_users.user_id = auth.uid()
+      AND team_users.role IN ('owner','admin')
   )
 )
 WITH CHECK (
@@ -798,10 +798,10 @@ WITH CHECK (
     SELECT 1
     FROM public.resources
     JOIN public.sites ON sites.id = resources.site_id
-    JOIN public.group_users ON group_users.group_id = sites.group_id
+    JOIN public.team_users ON team_users.team_id = sites.team_id
     WHERE resources.id = reservations.resource_id
-      AND group_users.user_id = auth.uid()
-      AND group_users.role IN ('owner','admin')
+      AND team_users.user_id = auth.uid()
+      AND team_users.role IN ('owner','admin')
   )
 );
 
@@ -816,10 +816,10 @@ USING (
     SELECT 1
     FROM public.resources
     JOIN public.sites ON sites.id = resources.site_id
-    JOIN public.group_users ON group_users.group_id = sites.group_id
+    JOIN public.team_users ON team_users.team_id = sites.team_id
     WHERE resources.id = reservations.resource_id
-      AND group_users.user_id = auth.uid()
-      AND group_users.role IN ('owner','admin')
+      AND team_users.user_id = auth.uid()
+      AND team_users.role IN ('owner','admin')
   )
 );
 
@@ -827,10 +827,10 @@ USING (
 -- 9. Useful indexes for performance
 -- =====================================================
 
-CREATE INDEX IF NOT EXISTS idx_group_users_group_id ON public.group_users(group_id);
-CREATE INDEX IF NOT EXISTS idx_group_users_user_id ON public.group_users(user_id);
+CREATE INDEX IF NOT EXISTS idx_team_users_team_id ON public.team_users(team_id);
+CREATE INDEX IF NOT EXISTS idx_team_users_user_id ON public.team_users(user_id);
 
-CREATE INDEX IF NOT EXISTS idx_sites_group_id ON public.sites(group_id);
+CREATE INDEX IF NOT EXISTS idx_sites_team_id ON public.sites(team_id);
 CREATE INDEX IF NOT EXISTS idx_resources_site_id ON public.resources(site_id);
 
 CREATE INDEX IF NOT EXISTS idx_resource_amenities_resource_id ON public.resource_amenities(resource_id);
@@ -842,15 +842,15 @@ CREATE INDEX IF NOT EXISTS idx_reservations_time ON public.reservations(start_ti
 
 -- Done
 
-CREATE OR REPLACE FUNCTION is_group_admin(_group_id uuid, _uid uuid)
+CREATE OR REPLACE FUNCTION is_team_admin(_team_id uuid, _uid uuid)
   RETURNS boolean
   LANGUAGE sql
   SECURITY DEFINER
 AS $$
   SELECT EXISTS (
     SELECT 1
-    FROM public.group_users
-    WHERE group_id = _group_id
+    FROM public.team_users
+    WHERE team_id = _team_id
       AND user_id = _uid
       AND role IN ('owner','admin')
   );
@@ -875,9 +875,9 @@ BEGIN
 END;
 $$;
 
-DROP FUNCTION IF EXISTS get_group_members(uuid);
+DROP FUNCTION IF EXISTS get_team_members(uuid);
 
-CREATE OR REPLACE FUNCTION get_group_members(_group_id uuid)
+CREATE OR REPLACE FUNCTION get_team_members(_team_id uuid)
 RETURNS TABLE (
   id uuid,
   user_id uuid,
@@ -895,15 +895,15 @@ BEGIN
     gu.user_id,
     gu.role,
     au.email
-  FROM group_users gu
+  FROM team_users gu
   JOIN auth.users au ON au.id = gu.user_id
-  WHERE gu.group_id = _group_id;
+  WHERE gu.team_id = _team_id;
 END;
 $$;
 
-DROP FUNCTION IF EXISTS get_group_with_member_count(uuid);
+DROP FUNCTION IF EXISTS get_team_with_member_count(uuid);
 
-CREATE OR REPLACE FUNCTION get_group_with_member_count(_user_id uuid)
+CREATE OR REPLACE FUNCTION get_team_with_member_count(_user_id uuid)
 RETURNS TABLE (
   id uuid,
   name varchar(255),
@@ -923,41 +923,41 @@ BEGIN
     g.name,
     g.description,
     gu.role as user_role,
-    (SELECT COUNT(*) FROM group_users WHERE group_id = g.id) as member_count,
-    (SELECT COUNT(*) FROM sites WHERE group_id = g.id) as site_count
-  FROM groups g
-  JOIN group_users gu ON g.id = gu.group_id
+    (SELECT COUNT(*) FROM team_users WHERE team_id = g.id) as member_count,
+    (SELECT COUNT(*) FROM sites WHERE team_id = g.id) as site_count
+  FROM teams g
+  JOIN team_users gu ON g.id = gu.team_id
   WHERE gu.user_id = _user_id;
 END;
 $$;
 
 
--- Function to create default group for new user
-CREATE OR REPLACE FUNCTION create_default_group_for_user()
+-- Function to create default team for new user
+CREATE OR REPLACE FUNCTION create_default_team_for_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-    _group_id uuid;
+    _team_id uuid;
 BEGIN
-    -- Create default group
-    INSERT INTO groups (
+    -- Create default team
+    INSERT INTO teams (
         name,
         description
     ) VALUES (
-        'My Default Group',
-        'Your personal default group'
-    ) RETURNING id INTO _group_id;
+        'My Default Team',
+        'Your personal default team'
+    ) RETURNING id INTO _team_id;
 
     -- Make user the owner
-    INSERT INTO group_users (
-        group_id,
+    INSERT INTO team_users (
+        team_id,
         user_id,
         role
     ) VALUES (
-        _group_id,
+        _team_id,
         NEW.id,
         'owner'
     );
@@ -965,7 +965,7 @@ BEGIN
     RETURN NEW;
 EXCEPTION WHEN OTHERS THEN
     -- Log error but don't prevent user creation
-    RAISE WARNING 'Failed to create default group for user %: %', NEW.id, SQLERRM;
+    RAISE WARNING 'Failed to create default team for user %: %', NEW.id, SQLERRM;
     RETURN NEW;
 END;
 $$;
@@ -977,7 +977,7 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW
-    EXECUTE FUNCTION create_default_group_for_user();
+    EXECUTE FUNCTION create_default_team_for_user();
 
 
 -- SAMPLE DATA --

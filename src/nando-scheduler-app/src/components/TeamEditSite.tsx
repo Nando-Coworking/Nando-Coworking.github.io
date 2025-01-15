@@ -12,7 +12,7 @@ interface Props {
     onSiteDeleted: () => void; // Add this prop
 }
 
-export const GroupEditSite: React.FC<Props> = ({
+export const TeamEditSite: React.FC<Props> = ({
     show,
     onHide,
     site,

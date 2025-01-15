@@ -1,6 +1,6 @@
 export interface Site {
     id: string;
-    group_id: string;
+    team_id: string;
     name: string;
     description?: string;
     address1?: string;

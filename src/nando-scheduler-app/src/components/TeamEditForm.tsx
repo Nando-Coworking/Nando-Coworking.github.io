@@ -1,38 +1,38 @@
 import React, { useState } from 'react';
 import { Offcanvas, Form, Button } from 'react-bootstrap';
-import { Group } from '../types/group';
+import { Team } from '../types/team';
 import { supabase } from '../supabaseClient';
 import { useToast } from '../ToastContext';
 
 interface Props {
     show: boolean;
     onHide: () => void;
-    group: Group | null;
-    onGroupUpdated: () => void;
+    team: Team | null;
+    onTeamUpdated: () => void;
 }
 
-export const GroupEditForm: React.FC<Props> = ({
+export const TeamEditForm: React.FC<Props> = ({
     show,
     onHide,
-    group,
-    onGroupUpdated
+    team,
+    onTeamUpdated
 }) => {
     const { addToast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
     const [validated, setValidated] = useState(false);
     const [formData, setFormData] = useState({
-        name: group?.name || '',
-        description: group?.description || ''
+        name: team?.name || '',
+        description: team?.description || ''
     });
 
     React.useEffect(() => {
-        if (group) {
+        if (team) {
             setFormData({
-                name: group.name,
-                description: group.description || ''
+                name: team.name,
+                description: team.description || ''
             });
         }
-    }, [group]);
+    }, [team]);
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -43,30 +43,30 @@ export const GroupEditForm: React.FC<Props> = ({
             return;
         }
 
-        if (!group) return;
+        if (!team) return;
         setIsSaving(true);
         
         try {
             const { error } = await supabase
-                .from('groups')
+                .from('teams')
                 .update({
                     name: formData.name,
                     description: formData.description
                 })
-                .eq('id', group.id);
+                .eq('id', team.id);
 
             if (error) throw error;
 
-            group.name = formData.name;
-            group.description = formData.description;
+            team.name = formData.name;
+            team.description = formData.description;
 
-            addToast('Group updated successfully', 'success');
-            onGroupUpdated();
+            addToast('Team updated successfully', 'success');
+            onTeamUpdated();
             onHide();
             setValidated(false);
         } catch (error) {
-            console.error('Error updating group:', error);
-            addToast('Error updating group', 'error');
+            console.error('Error updating team:', error);
+            addToast('Error updating team', 'error');
         } finally {
             setIsSaving(false);
         }
@@ -77,10 +77,10 @@ export const GroupEditForm: React.FC<Props> = ({
             <Offcanvas.Header closeButton className="border-bottom">
                 <div>
                     <Offcanvas.Title>
-                        <i className="fas fa-edit me-2"></i>Edit Group
+                        <i className="fas fa-edit me-2"></i>Edit Team
                     </Offcanvas.Title>
                     <div className="text-muted" style={{ fontSize: '0.85em' }}>
-                        Use the form below to modify the current group.
+                        Use the form below to modify the current team.
                     </div>
                 </div>
             </Offcanvas.Header>
@@ -92,12 +92,12 @@ export const GroupEditForm: React.FC<Props> = ({
                             type="text"
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="Enter group name"
+                            placeholder="Enter team name"
                             required
                             isInvalid={validated && !formData.name}
                         />
                         <Form.Control.Feedback type="invalid">
-                            Please provide a name for the group.
+                            Please provide a name for the team.
                         </Form.Control.Feedback>
                     </Form.Group>
 
@@ -108,12 +108,12 @@ export const GroupEditForm: React.FC<Props> = ({
                             rows={3}
                             value={formData.description}
                             onChange={e => setFormData({ ...formData, description: e.target.value })}
-                            placeholder="Enter group description"
+                            placeholder="Enter team description"
                             required
                             isInvalid={validated && !formData.description}
                         />
                         <Form.Control.Feedback type="invalid">
-                            Please provide a description for the group.
+                            Please provide a description for the team.
                         </Form.Control.Feedback>
                     </Form.Group>
 

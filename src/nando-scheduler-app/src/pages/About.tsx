@@ -19,14 +19,14 @@ const About: React.FC = () => {
             <div className="card">
               <div className="card-body">
                 <h4 className="card-title">
-                  <i className="fas fa-users-gear me-2"></i>Groups & Members
+                  <i className="fas fa-users-gear me-2"></i>Teams & Members
                 </h4>
                 <div className="card-text">
-                  Every user starts with their own group. As a group owner, you can:
+                  Every user starts with their own team. As a team owner, you can:
                 </div>
                 <ul>
                   <li>Invite others as admins or members</li>
-                  <li>Manage group settings and permissions</li>
+                  <li>Manage team settings and permissions</li>
                   <li>Control access to resources</li>
                 </ul>
               </div>

@@ -20,7 +20,7 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ChangePassword from './pages/auth/ChangePassword';
 import Cookies from 'js-cookie';
-import Groups from './pages/Groups';
+import Teams from './pages/Teams';
 import Sites from './pages/Sites';
 
 // Add this function before the App component
@@ -109,7 +109,7 @@ export default function App() {
               <Route path="/preferences" element={<Preferences />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/change-password" element={<ChangePassword />} />
-              <Route path="/groups" element={<Groups />} />
+              <Route path="/teams" element={<Teams />} />
               <Route path="/sites" element={<Sites />} />
               <Route path="*" element={<Home />} />
             </Routes>

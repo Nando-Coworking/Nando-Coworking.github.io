@@ -4,10 +4,10 @@ import moment from 'moment';
 import { supabase } from '../supabaseClient';
 import { Site } from '../types/site';
 import { Resource } from '../types/resource';
-import { Group } from '../types/group';
+import { Team } from '../types/team';
 import { SiteDetailsOffcanvas } from '../components/SiteDetailsOffcanvas';
 import { ResourceDetailsOffcanvas } from '../components/ResourceDetailsOffcanvas';
-import { GroupDetailsOffcanvas } from '../components/GroupDetailsOffcanvas';
+import { TeamDetailsOffcanvas } from '../components/TeamDetailsOffcanvas';
 import { useParams, useNavigate } from 'react-router-dom';
 
 interface Reservation {
@@ -16,7 +16,7 @@ interface Reservation {
   description: string;
   start_time: string;
   end_time: string;
-  resources: Resource & { sites: Site & { groups: Group } };
+  resources: Resource & { sites: Site & { teams: Team } };
 }
 
 const MyReservations: React.FC = () => {
@@ -27,11 +27,11 @@ const MyReservations: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [showSiteDetails, setShowSiteDetails] = useState(false);
   const [showResourceDetails, setShowResourceDetails] = useState(false);
-  const [showGroupDetails, setShowGroupDetails] = useState(false);
-  const [groupMembers, setGroupMembers] = useState<GroupUser[]>([]);
+  const [showTeamDetails, setShowTeamDetails] = useState(false);
+  const [teamMembers, setTeamMembers] = useState<TeamUser[]>([]);
 
   useEffect(() => {
     fetchReservations();
@@ -48,9 +48,9 @@ const MyReservations: React.FC = () => {
               *,
               sites (
                 *,
-                groups (
+                teams (
                   *,
-                  group_users (
+                  team_users (
                     id,
                     role,
                     user_id
@@ -97,19 +97,19 @@ const MyReservations: React.FC = () => {
     });
   };
 
-  const handleGroupClick = async (group: Group) => {
-    setSelectedGroup(group);
+  const handleTeamClick = async (team: Team) => {
+    setSelectedTeam(team);
 
     const { data: members, error } = await supabase
-      .rpc('get_group_members', {
-        _group_id: group.id
+      .rpc('get_team_members', {
+        _team_id: team.id
       });
 
     if (error) {
-      console.error('Error fetching group members:', error);
+      console.error('Error fetching team members:', error);
     } else {
-      setGroupMembers(members);
-      setShowGroupDetails(true);
+      setTeamMembers(members);
+      setShowTeamDetails(true);
     }
   };
 
@@ -143,9 +143,9 @@ const MyReservations: React.FC = () => {
         <Button
           variant="link"
           className="p-0"
-          onClick={() => handleGroupClick(reservation.resources.sites.groups)}
+          onClick={() => handleTeamClick(reservation.resources.sites.teams)}
         >
-          <i className="fas fa-users me-1"></i>{reservation.resources.sites.groups.name}
+          <i className="fas fa-users me-1"></i>{reservation.resources.sites.teams.name}
         </Button>
       </p>
       <p>
@@ -234,24 +234,24 @@ const MyReservations: React.FC = () => {
         onResourceDeleted={() => { }}
       />
 
-      <GroupDetailsOffcanvas
-        show={showGroupDetails}
-        onHide={() => setShowGroupDetails(false)}
-        selectedGroup={selectedGroup}
-        groupUsers={groupMembers}
-        editingGroup={{ name: selectedGroup?.name || '', description: selectedGroup?.description || '' }}
-        setEditingGroup={() => { }}
+      <TeamDetailsOffcanvas
+        show={showTeamDetails}
+        onHide={() => setShowTeamDetails(false)}
+        selectedTeam={selectedTeam}
+        teamUsers={teamMembers}
+        editingTeam={{ name: selectedTeam?.name || '', description: selectedTeam?.description || '' }}
+        setEditingTeam={() => { }}
         isSavingChanges={false}
-        onUpdateGroup={async () => { }}
+        onUpdateTeam={async () => { }}
         onEditClick={() => { }}
         onDeleteClick={() => { }}
         onAddMemberClick={() => { }}
         onRemoveUser={async () => { }}
         onRoleChange={async () => { }}
-        onLeaveGroup={async () => { }}
+        onLeaveTeam={async () => { }}
         rolePriority={{ owner: 0, admin: 1, member: 2 }}
         onShowLeaveConfirm={() => { }}
-        sites={selectedGroup?.sites || []}
+        sites={selectedTeam?.sites || []}
         onAddSite={() => { }}
         onEditSite={() => { }}
         onRemoveSite={async () => { }}

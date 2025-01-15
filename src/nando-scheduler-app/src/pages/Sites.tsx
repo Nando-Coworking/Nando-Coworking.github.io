@@ -4,8 +4,8 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../AuthContext';
 import { useToast } from '../ToastContext';
 import { Site } from '../types/site';
-import { GroupAddSite } from '../components/GroupAddSite';
-import { GroupEditSite } from '../components/GroupEditSite';
+import { TeamAddSite } from '../components/TeamAddSite';
+import { TeamEditSite } from '../components/TeamEditSite';
 import { SiteCard } from '../components/SiteCard';
 import { SiteDetailsOffcanvas } from '../components/SiteDetailsOffcanvas';
 
@@ -27,19 +27,19 @@ const Sites: React.FC = () => {
     }
 
     try {
-      // Get all sites from groups where the user is a member
+      // Get all sites from teams where the user is a member
       const { data, error } = await supabase
         .from('sites')
         .select(`
           *,
-          groups:group_id (
+          teams:team_id (
             name,
-            group_users!inner (
+            team_users!inner (
               role
             )
           )
         `)
-        .eq('groups.group_users.user_id', user.id);
+        .eq('teams.team_users.user_id', user.id);
 
       if (error) throw error;
       setSites(data || []);
@@ -80,7 +80,7 @@ const Sites: React.FC = () => {
             </div>
             <h4>No Locations Yet</h4>
             <p className="text-muted mb-4">
-              There are no locations available. Locations are added to groups by group owners and admins.
+              There are no locations available. Locations are added to teams by team owners and admins.
             </p>
           </Alert>
         ) : (
@@ -89,7 +89,7 @@ const Sites: React.FC = () => {
               <div key={site.id} className="col-md-6 col-lg-4">
                 <SiteCard
                   site={site}
-                  userRole={site.groups?.group_users[0]?.role}
+                  userRole={site.teams?.team_users[0]?.role}
                   onManage={() => {
                     setSelectedSite(site);
                     setShowSiteView(true); // Always show view first
@@ -101,10 +101,10 @@ const Sites: React.FC = () => {
         )}
       </Container>
 
-      <GroupAddSite
+      <TeamAddSite
         show={showSiteForm}
         onHide={() => setShowSiteForm(false)}
-        group={null}
+        team={null}
         onSiteAdded={fetchSites}
       />
 
@@ -112,14 +112,14 @@ const Sites: React.FC = () => {
         show={showSiteView}
         onHide={() => setShowSiteView(false)}
         site={selectedSite}
-        userRole={selectedSite?.groups?.group_users[0]?.role}
+        userRole={selectedSite?.teams?.team_users[0]?.role}
         onEdit={() => {
           setShowSiteView(false);
           setShowEditSite(true);
         }}
       />
 
-      <GroupEditSite
+      <TeamEditSite
         show={showEditSite}
         onHide={() => {
           setShowEditSite(false);
