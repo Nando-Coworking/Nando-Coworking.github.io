@@ -64,7 +64,7 @@ const Sites: React.FC = () => {
           <h3><i className="fas fa-building me-2"></i>Sites</h3>
           {!loading && sites.length > 0 && (
             <Button onClick={() => setShowSiteForm(true)}>
-              <i className="fas fa-plus me-2"></i>Add Location
+              <i className="fas fa-plus me-2"></i>Add Site
             </Button>
           )}
         </div>
@@ -78,9 +78,9 @@ const Sites: React.FC = () => {
             <div className="mb-3">
               <i className="fas fa-building fa-3x text-muted"></i>
             </div>
-            <h4>No Locations Yet</h4>
+            <h4>No Sites Yet</h4>
             <p className="text-muted mb-4">
-              There are no locations available. Locations are added to teams by team owners and admins.
+              There are no sites available. Sites are added to teams by team owners and admins.
             </p>
           </Alert>
         ) : (

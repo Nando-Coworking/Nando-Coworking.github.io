@@ -90,7 +90,7 @@ export const TeamAddSite: React.FC<Props> = ({
 
             if (error) throw error;
 
-            addToast('Location added successfully', 'success');
+            addToast('Site added successfully', 'success');
             onSiteAdded();
             setFormData({
                 name: '',
@@ -104,8 +104,8 @@ export const TeamAddSite: React.FC<Props> = ({
             });
             onHide();
         } catch (error) {
-            console.error('Error adding location:', error);
-            addToast('Error adding location', 'error');
+            console.error('Error adding site:', error);
+            addToast('Error adding site', 'error');
         } finally {
             setIsSaving(false);
         }
@@ -116,12 +116,12 @@ export const TeamAddSite: React.FC<Props> = ({
             <Offcanvas.Header closeButton className="border-bottom">
                 <div>
                     <Offcanvas.Title>
-                        <i className="fas fa-building me-2"></i>Add Location
+                        <i className="fas fa-building me-2"></i>Add Site
                     </Offcanvas.Title>
                     <div className="text-muted" style={{ fontSize: '0.85em' }}>
                         {team ? 
-                            `Add a new location to ${team.name}` : 
-                            'Add a new location to one of your teams'
+                            `Add a new site to ${team.name}` : 
+                            'Add a new site to one of your teams'
                         }
                     </div>
                 </div>
@@ -156,7 +156,7 @@ export const TeamAddSite: React.FC<Props> = ({
                             type="text"
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="Enter location name"
+                            placeholder="Enter site name"
                             required
                             isInvalid={validated && !formData.name}
                         />
@@ -172,7 +172,7 @@ export const TeamAddSite: React.FC<Props> = ({
                             rows={3}
                             value={formData.description}
                             onChange={e => setFormData({ ...formData, description: e.target.value })}
-                            placeholder="Enter location description"
+                            placeholder="Enter site description"
                         />
                     </Form.Group>
 

@@ -71,7 +71,7 @@ export const TeamEditSite: React.FC<Props> = ({
 
             if (error) throw error;
 
-            addToast('Location updated successfully', 'success');
+            addToast('Site updated successfully', 'success');
             onSiteUpdated();
             onHide();
         } catch (error) {
@@ -114,7 +114,7 @@ export const TeamEditSite: React.FC<Props> = ({
             }
     
             console.log('Site successfully deleted:', data);
-            addToast('Location deleted successfully', 'success');
+            addToast('Site deleted successfully', 'success');
             onSiteDeleted();
             onHide();
         } catch (error) {
@@ -130,7 +130,7 @@ export const TeamEditSite: React.FC<Props> = ({
             <Offcanvas.Header closeButton className="border-bottom">
                 <div>
                     <Offcanvas.Title>
-                        <i className="fas fa-building me-2"></i>Edit Location
+                        <i className="fas fa-building me-2"></i>Edit Site
                     </Offcanvas.Title>
                     <div className="text-muted" style={{ fontSize: '0.85em' }}>
                         Update the details for this location
@@ -289,7 +289,7 @@ export const TeamEditSite: React.FC<Props> = ({
                             </>
                         ) : (
                             <>
-                                <i className="fas fa-trash-alt me-2"></i>Permanently Delete Location
+                                <i className="fas fa-trash-alt me-2"></i>Permanently Delete Site
                             </>
                         )}
                     </Button>

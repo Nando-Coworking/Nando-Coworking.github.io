@@ -171,7 +171,7 @@ export const TeamDetailsOffcanvas: React.FC<Props> = ({
                 )}
 
                 <h5 className="mt-4">
-                    <i className="fas fa-building me-2"></i>Locations
+                    <i className="fas fa-building me-2"></i>Sites
                 </h5>
                 <ListGroup className="mb-3">
                     {sites.length === 0 ? (
@@ -217,7 +217,7 @@ export const TeamDetailsOffcanvas: React.FC<Props> = ({
                             className="mt-0 mb-3 justify-content-end"
                         >
                             <i className="fas fa-plus me-2"></i>
-                            Add Location<i className="fas fa-chevron-right ms-2"></i>
+                            Add Site<i className="fas fa-chevron-right ms-2"></i>
                         </Button>
                     </div>
                 )}

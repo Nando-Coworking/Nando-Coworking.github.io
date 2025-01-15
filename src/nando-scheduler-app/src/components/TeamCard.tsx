@@ -40,7 +40,7 @@ export const TeamCard: React.FC<TeamCardProps> = ({ team, onManage }) => {
             </small>
             <small className="text-muted">
               <i className="fas fa-building me-1"></i>
-              {team.site_count || 0} locations
+              {team.site_count || 0} sites
             </small>
           </div>
         </div>

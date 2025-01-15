@@ -79,7 +79,7 @@ export const SiteDetailsOffcanvas: React.FC<Props> = ({
             <i className="fas fa-building me-2"></i>{site.name}
           </Offcanvas.Title>
           <div className="text-muted" style={{ fontSize: '0.85em' }}>
-            View location details
+            View site details
           </div>
         </div>
         {canManage && (
