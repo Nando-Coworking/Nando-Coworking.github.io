@@ -1,4 +1,4 @@
-import React, { useState, FormEvent } from 'react';
+import React, { useState, FormEvent, useEffect } from 'react';
 import { Container, Form, Button, Alert, Card } from 'react-bootstrap';
 import { supabase } from '../../supabaseClient';
 import { useToast } from '../../ToastContext';
@@ -7,6 +7,7 @@ import { useAuth } from '../../AuthContext';
 
 const ChangePassword: React.FC = () => {
     const { user } = useAuth();
+    const [isDemo, setIsDemo] = useState<boolean>(false);
     const [password, setPassword] = useState<string>('');
     const [confirmPassword, setConfirmPassword] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
@@ -14,6 +15,12 @@ const ChangePassword: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const { addToast } = useToast();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (user?.email?.endsWith('@example.com')) {
+            setIsDemo(true);
+        }
+    }, [user]);
 
     const validatePassword = (pass: string, confirm: string): boolean => {
         if (pass.length < 8) return false;
@@ -39,6 +46,7 @@ const ChangePassword: React.FC = () => {
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
+        if (isDemo) return;
         setLoading(true);
         try {
             const { error } = await supabase.auth.updateUser({ password });
@@ -68,6 +76,12 @@ const ChangePassword: React.FC = () => {
 
             <Container className="mt-5 d-flex justify-content-center">
                 <div style={{ width: '100%', maxWidth: '500px' }}>
+                    {isDemo && (
+                        <Alert variant="info" className="mb-3">
+                            <i className="fas fa-info-circle me-2"></i>
+                            Password changes are disabled for demo accounts.
+                        </Alert>
+                    )}
                     <Form onSubmit={handleSubmit} autoComplete="on" id="change-password-form">
                         <Form.Control
                             type="email"
@@ -92,6 +106,7 @@ const ChangePassword: React.FC = () => {
                                                 isValid={password.length > 0 && isValid}
                                                 isInvalid={password.length > 0 && !isValid}
                                                 required
+                                                disabled={isDemo}
                                             />
                                         </Form.Group>
                                         <Form.Group className="mb-3" controlId="confirmPassword">
@@ -104,6 +119,7 @@ const ChangePassword: React.FC = () => {
                                                 isValid={confirmPassword.length > 0 && isValid}
                                                 isInvalid={confirmPassword.length > 0 && !isValid}
                                                 required
+                                                disabled={isDemo}
                                             />
                                             {confirmPassword.length > 0 && !isValid && (
                                                 <Form.Control.Feedback type="invalid">
@@ -149,7 +165,7 @@ const ChangePassword: React.FC = () => {
                                 <Button 
                                     type="submit" 
                                     variant="primary" 
-                                    disabled={!isValid || loading}
+                                    disabled={!isValid || loading || isDemo}
                                     form="change-password-form"
                                 >
                                     {loading ? (
