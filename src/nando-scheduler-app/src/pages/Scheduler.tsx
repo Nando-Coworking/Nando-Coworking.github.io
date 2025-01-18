@@ -6,15 +6,32 @@ import crypto from 'crypto';
 import { Form } from 'react-bootstrap';
 import '../styles/react-big-calendar.css';  // Update this import path
 import { useNavigate, useParams } from 'react-router-dom';
+import { supabase } from '../supabaseClient'; // Add this import
+import { ResourceDetailsOffcanvas } from '../components/ResourceDetailsOffcanvas'; // Add this import
+import { ReservationDetailsOffcanvas } from '../components/ReservationDetailsOffcanvas'; // Add this import
+import { useAuth } from '../AuthContext';
 
-// Move static data outside component
-const cityResources = {
-  'New York': ['Conf Rm 1 (Sm)', 'Conf Rm West (XL)', 'Office 1', 'Office 2'],
-  'Los Angeles': ['Conf Rm A', 'Conf Rm B', 'Office A', 'Office B'],
-  'Chicago': ['Conf Rm X', 'Conf Rm Y', 'Office X', 'Office Y'],
-  'Jays Aviary North': ['Office 1', 'Lounge', 'Cafeteria', 'Patio'],
-  'Mariner View South': ['East Office', 'West Lab', 'Conservatory', 'Lounge', 'Cafeteria', 'Patio'],
-};
+interface Site {
+  id: string;
+  name: string;
+  resources: Resource[];
+}
+
+interface Resource {
+  id: string;
+  name: string;
+  site_id: string;
+}
+
+interface Reservation {
+  id: string;
+  title: string;
+  description: string;
+  start_time: string;
+  end_time: string;
+  resource_id: string;
+  user_id: string;
+}
 
 const isWeekend = (date: Date): boolean => {
   const day = date.getDay();
@@ -135,123 +152,212 @@ const Scheduler: React.FC = () => {
   const navigate = useNavigate();
   const localizer = momentLocalizer(moment);
   const initialLoadRef = useRef(true);
-  const [selectedCity, setSelectedCity] = useState('');
-  const [selectedResource, setSelectedResource] = useState('');
+  const { user } = useAuth();
+  const [sites, setSites] = useState<Site[]>([]);
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [selectedSiteId, setSelectedSiteId] = useState('');
+  const [selectedResourceId, setSelectedResourceId] = useState('');
   const [events, setEvents] = useState([]);
+  const [showResourceDetails, setShowResourceDetails] = useState(false); // Add this state
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(null); // Add this state
+  const [showReservationDetails, setShowReservationDetails] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+  const [allReservations, setAllReservations] = useState<Reservation[]>([]); // New state for all reservations
 
-  // Handle initial city param
+  // Fetch sites
   useEffect(() => {
-    if (initialLoadRef.current && city) {
-      console.log('City effect:', { city });
-      const decodedCity = decodeURIComponent(city);
-      if (cityResources[decodedCity]) {
-        console.log('Setting city to:', decodedCity);
-        setSelectedCity(decodedCity);
-      } else {
-        console.log('Invalid city, navigating to /scheduler');
-        navigate('/scheduler');
-      }
-    }
-  }, [city]);
+    const fetchSites = async () => {
+      const { data, error } = await supabase
+        .from('sites')
+        .select(`
+          id,
+          name,
+          resources (
+            id,
+            name
+          )
+        `)
+        .order('name');
 
-  // Handle resource param after city is set
-  useEffect(() => {
-    if (initialLoadRef.current && selectedCity && resource) {
-      console.log('Resource effect:', { selectedCity, resource });
-      const decodedResource = decodeURIComponent(resource);
-      if (cityResources[selectedCity].includes(decodedResource)) {
-        console.log('Setting resource to:', decodedResource);
-        setSelectedResource(decodedResource);
-        setEvents(generateEventsForResource(decodedResource));
-      } else {
-        console.log('Invalid resource, navigating to city');
-        navigate(`/scheduler/${encodeURIComponent(selectedCity)}`);
+      if (error) {
+        console.error('Error fetching sites:', error);
+        return;
       }
-      initialLoadRef.current = false;
-    }
-  }, [selectedCity, resource]);
+      setSites(data || []);
+    };
 
-  const generateEventsForResource = (resource: string) => {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 45); // 45 days in the past
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() + 14); // 2 weeks in the future
-    return generateEvents(startDate, endDate, 0.6);
+    fetchSites();
+  }, []);
+
+  // Define fetchAllReservations as a reusable function
+  const fetchAllReservations = async () => {
+    if (!user?.id || !user?.email) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('reservations')
+        .select(`
+          *,
+          resources:resource_id (
+            *,
+            sites:site_id (
+              *,
+              teams:team_id (*)
+            )
+          )
+        `)
+        .or(`user_id.eq.${user?.id},participants.cs.{"${user?.email}"}`);
+    
+      if (error) {
+        console.error('Error fetching reservations:', error);
+        return;
+      }
+    
+      setAllReservations(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    }
   };
 
+  // Update initial load effect to use the function
   useEffect(() => {
-    // Clear resource and events when city changes
-    setSelectedResource('');
-    setEvents([]);
-  }, [selectedCity]);
+    fetchAllReservations();
+  }, [user]);
 
-  // Regular city change (not from URL)
-  const handleCityChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    initialLoadRef.current = false;
-    const newCity = event.target.value;
-    setSelectedCity(newCity);
-    setSelectedResource('');
-    setEvents([]);
+  // Filter reservations based on selected site and resource
+  useEffect(() => {
+    const filteredReservations = allReservations.filter(reservation => {
+      // Ensure reservation has required nested data
+      if (!reservation.resources?.sites) return false;
+      
+      if (!selectedSiteId && !selectedResourceId) return true;
+      if (selectedSiteId && !selectedResourceId) {
+        return reservation.resources.sites.id === selectedSiteId;
+      }
+      if (selectedResourceId) {
+        return reservation.resource_id === selectedResourceId;
+      }
+      return true;
+    });
+  
+    const events = filteredReservations.map(reservation => ({
+      id: reservation.id,
+      title: reservation.title,
+      start: new Date(reservation.start_time),
+      end: new Date(reservation.end_time),
+      resource_id: reservation.resource_id,
+      resources: reservation.resources
+    }));
+  
+    setEvents(events);
+  }, [selectedSiteId, selectedResourceId, allReservations]);
 
-    if (newCity) {
-      navigate(`/scheduler/${encodeURIComponent(newCity)}`);
+  // Update site selection
+  const handleSiteChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const siteId = event.target.value;
+    setSelectedSiteId(siteId);
+    setSelectedResourceId('');
+    setEvents([]);
+    
+    if (siteId) {
+      const site = sites.find(s => s.id === siteId);
+      navigate(`/scheduler/${encodeURIComponent(site?.name || '')}`);
     } else {
       navigate('/scheduler');
     }
   };
 
+  // Update resource selection
   const handleResourceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const newResource = event.target.value;
-    setSelectedResource(newResource);
-
-    if (newResource && selectedCity) {
-      setEvents(generateEventsForResource(newResource));
-      navigate(`/scheduler/${encodeURIComponent(selectedCity)}/${encodeURIComponent(newResource)}`);
-    } else {
-      navigate(`/scheduler/${encodeURIComponent(selectedCity)}`);
+    const resourceId = event.target.value;
+    setSelectedResourceId(resourceId);
+    
+    if (resourceId && selectedSiteId) {
+      const site = sites.find(s => s.id === selectedSiteId);
+      const resource = resources.find(r => r.id === resourceId);
+      navigate(`/scheduler/${encodeURIComponent(site?.name || '')}/${encodeURIComponent(resource?.name || '')}`);
     }
   };
 
+  // Add this new function to handle event clicks
+  // Update handleEventClick to use the same query structure that works in fetchReservations
+const handleEventClick = async (event: any) => {
+  try {
+    const { data, error } = await supabase
+      .from('reservations')
+      .select(`
+        *,
+        resources:resource_id (
+          *,
+          sites:site_id (
+            *,
+            teams:team_id (*)
+          )
+        )
+      `)
+      .eq('id', event.id)
+      .or(`user_id.eq.${user?.id},participants.cs.{"${user?.email}"}`)
+      .single();
+
+    if (error) throw error;
+    setSelectedReservation(data);
+    setShowReservationDetails(true);
+  } catch (error) {
+    console.error('Error fetching reservation:', error);
+  }
+};
+
   return (
     <>
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="d-flex justify-content-between align-items-center mb-3">
         <h3><i className="fas fa-calendar-days me-2"></i>Scheduler</h3>
+        
+        <Form className="d-flex align-items-center gap-3">
+          <Form.Group className="mb-0">
+            <div className="d-flex align-items-center">
+              <Form.Label htmlFor="site" className="me-2 mb-0">Location:</Form.Label>
+              <Form.Select
+                id="site"
+                value={selectedSiteId}
+                onChange={handleSiteChange}
+                className="form-select-sm"
+                style={{ width: '200px' }}
+              >
+                <option value="">All Locations</option>
+                {sites.map((site) => (
+                  <option key={site.id} value={site.id}>
+                    {site.name}
+                  </option>
+                ))}
+              </Form.Select>
+            </div>
+          </Form.Group>
+
+          <Form.Group className="mb-0">
+            <div className="d-flex align-items-center">
+              <Form.Label htmlFor="resource" className="me-2 mb-0">Resource:</Form.Label>
+              <Form.Select
+                id="resource"
+                value={selectedResourceId}
+                onChange={handleResourceChange}
+                disabled={!selectedSiteId}
+                className="form-select-sm"
+                style={{ width: '200px' }}
+              >
+                <option value="">All Resources</option>
+                {selectedSiteId && sites
+                  .find(s => s.id === selectedSiteId)
+                  ?.resources.map((resource) => (
+                    <option key={resource.id} value={resource.id}>
+                      {resource.name}
+                    </option>
+                  ))}
+              </Form.Select>
+            </div>
+          </Form.Group>
+        </Form>
       </div>
-
-      <Form className="mb-3">
-        <Form.Group className="mb-2">
-          <Form.Label htmlFor="city">Select a location:</Form.Label>
-          <Form.Select
-            id="city"
-            value={selectedCity}
-            onChange={handleCityChange}
-          >
-            <option value="">Select a location...</option>
-            {Object.keys(cityResources).map((city) => (
-              <option key={city} value={city}>
-                {city}
-              </option>
-            ))}
-          </Form.Select>
-        </Form.Group>
-
-        <Form.Group className="mb-2">
-          <Form.Label htmlFor="resource">Select a resource:</Form.Label>
-          <Form.Select
-            id="resource"
-            value={selectedResource}
-            onChange={handleResourceChange}
-            disabled={!selectedCity}
-          >
-            <option value="">Select a resource...</option>
-            {selectedCity && cityResources[selectedCity].map((resource) => (
-              <option key={resource} value={resource}>
-                {resource}
-              </option>
-            ))}
-          </Form.Select>
-        </Form.Group>
-      </Form>
 
       <Calendar
         localizer={localizer}
@@ -261,6 +367,36 @@ const Scheduler: React.FC = () => {
         defaultView={Views.MONTH}
         views={['month', 'week', 'day']}
         style={{ height: 600 }}
+        onSelectEvent={handleEventClick}  // Add this line
+      />
+
+      {/* Add this at the bottom */}
+      <ResourceDetailsOffcanvas
+        show={showResourceDetails}
+        onHide={() => {
+          setShowResourceDetails(false);
+          setSelectedResource(null);
+        }}
+        resource={selectedResource}
+        userRole="member"  // Force member view for read-only access
+        onResourceUpdated={() => {}} // No-op since we're in read-only mode
+        onResourceDeleted={() => {}} // No-op since we're in read-only mode
+      />
+
+      <ReservationDetailsOffcanvas 
+        show={showReservationDetails}
+        onHide={() => {
+          setShowReservationDetails(false);
+          setSelectedReservation(null);
+        }}
+        reservation={selectedReservation}
+        onReservationUpdated={fetchAllReservations}
+        onReservationDeleted={fetchAllReservations}
+        onResourceClick={(resource) => {
+          setSelectedResource(resource);
+          setShowResourceDetails(true);
+        }}
+        onSiteClick={() => {}} // No-op since we don't show site details in scheduler
       />
     </>
   );
