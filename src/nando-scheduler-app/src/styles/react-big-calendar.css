@@ -127,3 +127,10 @@
 .rbc-month-row + .rbc-month-row {
   border-color: var(--bs-border-color);
 }
+
+.rbc-event-subtitle {
+  font-size: 0.7em;
+  opacity: 0.8;
+  display: block;
+  margin-top: 0px;
+}

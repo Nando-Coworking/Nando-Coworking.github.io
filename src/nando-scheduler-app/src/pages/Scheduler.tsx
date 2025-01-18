@@ -10,6 +10,8 @@ import { supabase } from '../supabaseClient'; // Add this import
 import { ResourceDetailsOffcanvas } from '../components/ResourceDetailsOffcanvas'; // Add this import
 import { ReservationDetailsOffcanvas } from '../components/ReservationDetailsOffcanvas'; // Add this import
 import { useAuth } from '../AuthContext';
+import { ReservationCreateForm } from '../components/ReservationCreateForm';
+import { useToast } from '../ToastContext';
 
 interface Site {
   id: string;
@@ -147,12 +149,25 @@ const generateEvents = (startDate: Date, endDate: Date) => {
   return events.sort((a, b) => a.start.getTime() - b.start.getTime());
 };
 
+// Add custom Event component near top of file
+const EventComponent = ({ event }: any) => (
+  <div>
+    <div className="rbc-event-title">{event.title}</div>
+    {event.resources?.sites && (
+      <small className="rbc-event-subtitle text-muted">
+        {`${event.resources.sites.name} - ${event.resources.name}`}
+      </small>
+    )}
+  </div>
+);
+
 const Scheduler: React.FC = () => {
   const { city, resource } = useParams();
   const navigate = useNavigate();
   const localizer = momentLocalizer(moment);
   const initialLoadRef = useRef(true);
   const { user } = useAuth();
+  const { addToast } = useToast();  // Add this line near other hooks
   const [sites, setSites] = useState<Site[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -164,6 +179,11 @@ const Scheduler: React.FC = () => {
   const [showReservationDetails, setShowReservationDetails] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [allReservations, setAllReservations] = useState<Reservation[]>([]); // New state for all reservations
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<{
+    start: Date;
+    end: Date;
+  } | null>(null);
 
   // Fetch sites
   useEffect(() => {
@@ -173,6 +193,7 @@ const Scheduler: React.FC = () => {
         .select(`
           id,
           name,
+          team_id,
           resources (
             id,
             name
@@ -193,7 +214,7 @@ const Scheduler: React.FC = () => {
   // Define fetchAllReservations as a reusable function
   const fetchAllReservations = async () => {
     if (!user?.id || !user?.email) return;
-    
+
     try {
       const { data, error } = await supabase
         .from('reservations')
@@ -208,12 +229,12 @@ const Scheduler: React.FC = () => {
           )
         `)
         .or(`user_id.eq.${user?.id},participants.cs.{"${user?.email}"}`);
-    
+
       if (error) {
         console.error('Error fetching reservations:', error);
         return;
       }
-    
+
       setAllReservations(data || []);
     } catch (error) {
       console.error('Error:', error);
@@ -230,7 +251,7 @@ const Scheduler: React.FC = () => {
     const filteredReservations = allReservations.filter(reservation => {
       // Ensure reservation has required nested data
       if (!reservation.resources?.sites) return false;
-      
+
       if (!selectedSiteId && !selectedResourceId) return true;
       if (selectedSiteId && !selectedResourceId) {
         return reservation.resources.sites.id === selectedSiteId;
@@ -240,7 +261,7 @@ const Scheduler: React.FC = () => {
       }
       return true;
     });
-  
+
     const events = filteredReservations.map(reservation => ({
       id: reservation.id,
       title: reservation.title,
@@ -249,7 +270,7 @@ const Scheduler: React.FC = () => {
       resource_id: reservation.resource_id,
       resources: reservation.resources
     }));
-  
+
     setEvents(events);
   }, [selectedSiteId, selectedResourceId, allReservations]);
 
@@ -259,7 +280,7 @@ const Scheduler: React.FC = () => {
     setSelectedSiteId(siteId);
     setSelectedResourceId('');
     setEvents([]);
-    
+
     if (siteId) {
       const site = sites.find(s => s.id === siteId);
       navigate(`/scheduler/${encodeURIComponent(site?.name || '')}`);
@@ -272,7 +293,7 @@ const Scheduler: React.FC = () => {
   const handleResourceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const resourceId = event.target.value;
     setSelectedResourceId(resourceId);
-    
+
     if (resourceId && selectedSiteId) {
       const site = sites.find(s => s.id === selectedSiteId);
       const resource = resources.find(r => r.id === resourceId);
@@ -282,11 +303,11 @@ const Scheduler: React.FC = () => {
 
   // Add this new function to handle event clicks
   // Update handleEventClick to use the same query structure that works in fetchReservations
-const handleEventClick = async (event: any) => {
-  try {
-    const { data, error } = await supabase
-      .from('reservations')
-      .select(`
+  const handleEventClick = async (event: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('reservations')
+        .select(`
         *,
         resources:resource_id (
           *,
@@ -296,23 +317,34 @@ const handleEventClick = async (event: any) => {
           )
         )
       `)
-      .eq('id', event.id)
-      .or(`user_id.eq.${user?.id},participants.cs.{"${user?.email}"}`)
-      .single();
+        .eq('id', event.id)
+        .or(`user_id.eq.${user?.id},participants.cs.{"${user?.email}"}`)
+        .single();
 
-    if (error) throw error;
-    setSelectedReservation(data);
-    setShowReservationDetails(true);
-  } catch (error) {
-    console.error('Error fetching reservation:', error);
-  }
-};
+      if (error) throw error;
+      setSelectedReservation(data);
+      setShowReservationDetails(true);
+    } catch (error) {
+      console.error('Error fetching reservation:', error);
+    }
+  };
+
+  // Add handler for slot selection
+  const handleSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
+    if (!selectedSiteId || !selectedResourceId) {
+      addToast('Please select a location and resource first', 'warning');
+      return;
+    }
+
+    setSelectedSlot({ start, end });
+    setShowCreateForm(true);
+  };
 
   return (
     <>
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h3><i className="fas fa-calendar-days me-2"></i>Scheduler</h3>
-        
+
         <Form className="d-flex align-items-center gap-3">
           <Form.Group className="mb-0">
             <div className="d-flex align-items-center">
@@ -368,6 +400,11 @@ const handleEventClick = async (event: any) => {
         views={['month', 'week', 'day']}
         style={{ height: 600 }}
         onSelectEvent={handleEventClick}  // Add this line
+        selectable={true}
+        onSelectSlot={handleSelectSlot}
+        components={{
+          event: EventComponent
+        }}
       />
 
       {/* Add this at the bottom */}
@@ -379,11 +416,11 @@ const handleEventClick = async (event: any) => {
         }}
         resource={selectedResource}
         userRole="member"  // Force member view for read-only access
-        onResourceUpdated={() => {}} // No-op since we're in read-only mode
-        onResourceDeleted={() => {}} // No-op since we're in read-only mode
+        onResourceUpdated={() => { }} // No-op since we're in read-only mode
+        onResourceDeleted={() => { }} // No-op since we're in read-only mode
       />
 
-      <ReservationDetailsOffcanvas 
+      <ReservationDetailsOffcanvas
         show={showReservationDetails}
         onHide={() => {
           setShowReservationDetails(false);
@@ -396,7 +433,27 @@ const handleEventClick = async (event: any) => {
           setSelectedResource(resource);
           setShowResourceDetails(true);
         }}
-        onSiteClick={() => {}} // No-op since we don't show site details in scheduler
+        onSiteClick={() => { }} // No-op since we don't show site details in scheduler
+      />
+
+      <ReservationCreateForm
+        show={showCreateForm}
+        onHide={() => {
+          setShowCreateForm(false);
+          setSelectedSlot(null);
+        }}
+        onReservationCreated={() => {
+          fetchAllReservations();
+          setShowCreateForm(false);
+          setSelectedSlot(null);
+        }}
+        initialValues={{
+          team_id: sites.find(s => s.id === selectedSiteId)?.team_id, // Use team_id directly from site
+          site_id: selectedSiteId,
+          resource_id: selectedResourceId,
+          start_time: selectedSlot ? moment(selectedSlot.start).format('YYYY-MM-DDTHH:mm') : undefined,
+          end_time: selectedSlot ? moment(selectedSlot.end).format('YYYY-MM-DDTHH:mm') : undefined
+        }}
       />
     </>
   );

@@ -9,12 +9,20 @@ interface Props {
   show: boolean;
   onHide: () => void;
   onReservationCreated: () => void;
+  initialValues?: {
+    team_id?: string;
+    site_id?: string;
+    resource_id?: string;
+    start_time?: string;
+    end_time?: string;
+  };
 }
 
 export const ReservationCreateForm: React.FC<Props> = ({
   show,
   onHide,
-  onReservationCreated
+  onReservationCreated,
+  initialValues
 }) => {
   const { user } = useAuth();
   const { addToast } = useToast();
@@ -95,6 +103,54 @@ export const ReservationCreateForm: React.FC<Props> = ({
 
     fetchResources();
   }, [formData.site_id]);
+
+  // Set initial form data using the props
+  useEffect(() => {
+    if (show && initialValues) {
+      // Set form data with initialValues when form opens
+      setFormData(prev => ({
+        ...prev,
+        team_id: initialValues.team_id || '',
+        site_id: initialValues.site_id || '',
+        resource_id: initialValues.resource_id || '',
+        start_time: initialValues.start_time || prev.start_time,
+        end_time: initialValues.end_time || prev.end_time
+      }));
+
+      // Trigger site and resource fetching right away if we have team_id/site_id
+      if (initialValues.team_id) {
+        const fetchSites = async () => {
+          const { data, error } = await supabase
+            .from('sites')
+            .select('*')
+            .eq('team_id', initialValues.team_id);
+
+          if (error) {
+            console.error('Error fetching sites:', error);
+            return;
+          }
+          setSites(data || []);
+        };
+        fetchSites();
+      }
+
+      if (initialValues.site_id) {
+        const fetchResources = async () => {
+          const { data, error } = await supabase
+            .from('resources')
+            .select('*')
+            .eq('site_id', initialValues.site_id);
+
+          if (error) {
+            console.error('Error fetching resources:', error);
+            return;
+          }
+          setResources(data || []);
+        };
+        fetchResources();
+      }
+    }
+  }, [show, initialValues]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -277,4 +333,4 @@ export const ReservationCreateForm: React.FC<Props> = ({
       </div>
     </Offcanvas>
   );
-};
+}
