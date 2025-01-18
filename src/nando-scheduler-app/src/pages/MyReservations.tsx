@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ListGroup, Button, Tabs, Tab, Spinner } from 'react-bootstrap';
-import moment from 'moment';
+import { ListGroup, Button, Tabs, Tab, Spinner, Badge } from 'react-bootstrap';
+//import moment from 'moment';
+import moment from 'moment-timezone';
 import { supabase } from '../supabaseClient';
 import { Site } from '../types/site';
 import { Resource } from '../types/resource';
@@ -9,6 +10,9 @@ import { SiteDetailsOffcanvas } from '../components/SiteDetailsOffcanvas';
 import { ResourceDetailsOffcanvas } from '../components/ResourceDetailsOffcanvas';
 import { TeamDetailsOffcanvas } from '../components/TeamDetailsOffcanvas';
 import { useParams, useNavigate } from 'react-router-dom';
+import { ReservationCreateForm } from '../components/ReservationCreateForm';
+import { ReservationDetailsOffcanvas } from '../components/ReservationDetailsOffcanvas';
+import { useAuth } from '../AuthContext';
 
 interface Reservation {
   id: string;
@@ -16,10 +20,24 @@ interface Reservation {
   description: string;
   start_time: string;
   end_time: string;
-  resources: Resource & { sites: Site & { teams: Team } };
+  user_id: string;
+  resources: Resource & { 
+    sites: Site & { 
+      teams: Team 
+    } 
+  };
+  participants?: string[];
 }
 
+// DateTime utility functions
+const formatLocalDateTime = (utcDateTime: string) => {
+  const localTime = moment.utc(utcDateTime).local();
+  const timezoneName = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return `${localTime.format('MMMM D, YYYY h:mm A')} (${timezoneName})`;
+};
+
 const MyReservations: React.FC = () => {
+  const { user } = useAuth();
   const { tab } = useParams();
   const navigate = useNavigate();
 
@@ -32,58 +50,58 @@ const MyReservations: React.FC = () => {
   const [showResourceDetails, setShowResourceDetails] = useState(false);
   const [showTeamDetails, setShowTeamDetails] = useState(false);
   const [teamMembers, setTeamMembers] = useState<TeamUser[]>([]);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+  const [showReservationDetails, setShowReservationDetails] = useState(false);
 
   useEffect(() => {
-    fetchReservations();
-  }, []);
+    if (user?.id && user?.email) {
+      fetchReservations();
+    }
+  }, [tab, user]); // Add both tab and user as dependencies
 
   const fetchReservations = async () => {
+    if (!user?.id || !user?.email) {
+      setIsLoading(false);
+      return;
+    }
+  
     try {
-      setIsLoading(true);
-      const { data, error } = await supabase
+      console.log('Fetching for:', { user: user.id, email: user.email });
+
+      const { data: reservationsData, error: reservationsError } = await supabase
         .from('reservations')
         .select(`
+          *,
+          resources:resource_id (
             *,
-            resources (
+            sites:site_id (
               *,
-              sites (
-                *,
-                teams (
-                  *,
-                  team_users (
-                    id,
-                    role,
-                    user_id
-                  ),
-                  sites (
-                    id,
-                    name,
-                    description,
-                    city,
-                    state,
-                    postal_code
-                  )
-                )
-              )
+              teams:team_id (*)
             )
-          `)
-        .order('start_time', { ascending: true });
+          )
+        `)
+        .or(`user_id.eq.${user.id},participants.cs.{"${user.email}"}`)
+        .throwOnError();
 
-      if (error) throw error;
-      setReservations(data || []);
+      if (reservationsError) throw reservationsError;
+      setReservations(reservationsData);
     } catch (error) {
-      console.error('Error fetching reservations:', error);
+      console.error('Detailed error:', { error });
     } finally {
       setIsLoading(false);
     }
   };
 
   const filterReservations = (type: 'past' | 'current' | 'future') => {
-    const now = moment();
+    // Get current time in local timezone
+    const now = moment().local();
+    
     return reservations.filter(reservation => {
-      const start = moment(reservation.start_time);
-      const end = moment(reservation.end_time);
-
+      // Convert UTC database times to local for comparison
+      const start = moment.utc(reservation.start_time).local();
+      const end = moment.utc(reservation.end_time).local();
+  
       switch (type) {
         case 'past':
           return end.isBefore(now);
@@ -113,46 +131,147 @@ const MyReservations: React.FC = () => {
     }
   };
 
-  const renderReservation = (reservation: Reservation) => (
-    <ListGroup.Item key={reservation.id}>
-      <strong>{reservation.title}</strong>
-      <p>{reservation.description}</p>
-      <p>
-        <Button
-          variant="link"
-          className="p-0 me-2"
+  const isOwner = (reservation: Reservation) => reservation.user_id === user?.id;
+
+  const renderParticipants = (reservation: Reservation) => {
+    // Solo reservation
+    if (!reservation.participants || reservation.participants.length === 0) {
+      return (
+        <div className="d-flex gap-2 align-items-center">
+          <Badge bg="success" className="rounded-pill">
+            <i className="fas fa-user me-1"></i>Solo
+          </Badge>
+        </div>
+      );
+    }
+  
+    // Group reservation
+    return (
+      <div className="d-flex gap-2 align-items-center">
+        <Badge 
+          bg={isOwner(reservation) ? "primary" : "secondary"}
+          className="rounded-pill"
+          style={{ fontSize: '0.75em' }}
+        >
+          <i className="fas fa-users me-1"></i>
+          {isOwner(reservation) ? 'Owner' : 'Guest'}
+        </Badge>
+        <div className="d-flex gap-2 flex-wrap">
+          {reservation.participants.map((email, index) => (
+            <Badge
+              key={index}
+              bg="info"
+              text="dark"
+              className="rounded-pill"
+              style={{ fontSize: '0.75em', fontWeight: 'normal' }}
+              title={email}
+            >
+              {email.split('@')[0]}
+            </Badge>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderReservation = (reservation: Reservation) => {
+    const start = formatLocalDateTime(reservation.start_time);
+    const end = formatLocalDateTime(reservation.end_time);
+    
+    return (
+      <ListGroup.Item key={reservation.id}>
+        <div 
+          role="button" 
           onClick={() => {
-            setSelectedResource(reservation.resources);
-            setShowResourceDetails(true);
+            setSelectedReservation(reservation);
+            setShowReservationDetails(true);
           }}
+          className="text-primary mb-2 fw-bold"
+          style={{ cursor: 'pointer', fontSize: '1.1rem' }}
         >
-          <i className="fas fa-box me-1"></i>{reservation.resources.name}
-        </Button>
-        {" at "}
-        <Button
-          variant="link"
-          className="p-0 me-2"
-          onClick={() => {
-            setSelectedSite(reservation.resources.sites);
-            setShowSiteDetails(true);
-          }}
-        >
-          <i className="fas fa-building me-1"></i>{reservation.resources.sites.name}
-        </Button>
-        {" via "}
-        <Button
-          variant="link"
-          className="p-0"
-          onClick={() => handleTeamClick(reservation.resources.sites.teams)}
-        >
-          <i className="fas fa-users me-1"></i>{reservation.resources.sites.teams.name}
-        </Button>
-      </p>
-      <p>
-        {moment(reservation.start_time).format('LLL')} - {moment(reservation.end_time).format('LLL')}
-      </p>
-    </ListGroup.Item>
-  );
+          {reservation.title}
+        </div>
+        {reservation.description && <p>{reservation.description}</p>}
+        
+        <div className="d-flex mb-2">
+          <div style={{ width: '80px' }}>
+            <small className="text-muted">
+              <i className="fas fa-users me-1"></i>Who:
+            </small>
+          </div>
+          <div className="flex-grow-1">
+            {renderParticipants(reservation)}
+          </div>
+        </div>
+  
+        {reservation.resources && (
+          <div className="d-flex mb-2">
+            <div style={{ width: '80px' }}>
+              <small className="text-muted">
+                <i className="fas fa-location-dot me-1"></i>Where:
+              </small>
+            </div>
+            <div className="flex-grow-1">
+              {reservation.resources?.name && (
+                <Button
+                  variant="link"
+                  className="p-0"
+                  onClick={() => {
+                    setSelectedResource(reservation.resources);
+                    setShowResourceDetails(true);
+                  }}
+                >
+                  <i className="fas fa-box me-1"></i>
+                  {reservation.resources.name}
+                </Button>
+              )}
+              {reservation.resources?.sites?.name && (
+                <>
+                  {" at "}
+                  <Button
+                    variant="link"
+                    className="p-0"
+                    onClick={() => {
+                      setSelectedSite(reservation.resources.sites);
+                      setShowSiteDetails(true);
+                    }}
+                  >
+                    <i className="fas fa-building me-1"></i>
+                    {reservation.resources.sites.name}
+                  </Button>
+                </>
+              )}
+              {reservation.resources?.sites?.teams?.name && (
+                <>
+                  {" ("}
+                  <Button
+                    variant="link"
+                    className="p-0"
+                    onClick={() => handleTeamClick(reservation.resources.sites.teams)}
+                  >
+                    <i className="fas fa-users me-1"></i>
+                    {reservation.resources.sites.teams.name}
+                  </Button>
+                  {")"}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+  
+        <div className="d-flex mb-2">
+          <div style={{ width: '80px' }}>
+            <small className="text-muted">
+              <i className="fas fa-clock me-1"></i>When:
+            </small>
+          </div>
+          <div className="flex-grow-1">
+            {start} - {end}
+          </div>
+        </div>
+      </ListGroup.Item>
+    );
+  };
 
   const renderEmptyMessage = (period: string) => (
     <ListGroup>
@@ -171,23 +290,33 @@ const MyReservations: React.FC = () => {
   const activeTab = validTabs.includes(tab || '') ? tab : 'current';
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
+    <div className="p-3">
+            <div className="d-flex justify-content-between align-items-center mb-4">
         <h3><i className="fas fa-calendar-check me-2"></i>My Reservations</h3>
 
-        <Button onClick={() => false} disabled>
+        <Button onClick={() => setShowCreateForm(true)}>
           <i className="fas fa-calendar-plus me-2"></i>Create Reservation
         </Button>
 
       </div>
+      
       <Tabs
-        activeKey={activeTab}
+        activeKey={tab || 'current'}
+        onSelect={(k) => k && navigate(`/myreservations/${k}`)}
         className="mb-3"
-        onSelect={(k) => navigate(`/myreservations/${k}`)}
       >
-        <Tab
-          eventKey="current"
-          title={<span><i className="fas fa-clock me-2"></i>Current</span>}
+        <Tab 
+          eventKey="current" 
+          title={
+            <span>
+              Current{' '}
+              {filterReservations('current').length > 0 && (
+                <Badge bg="primary" pill>
+                  {filterReservations('current').length}
+                </Badge>
+              )}
+            </span>
+          }
         >
           {filterReservations('current').length > 0 ? (
             <ListGroup>
@@ -195,9 +324,18 @@ const MyReservations: React.FC = () => {
             </ListGroup>
           ) : renderEmptyMessage('current')}
         </Tab>
-        <Tab
-          eventKey="upcoming"
-          title={<span><i className="fas fa-clock-rotate-left fa-flip-horizontal me-2"></i>Upcoming</span>}
+        <Tab 
+          eventKey="upcoming" 
+          title={
+            <span>
+              Upcoming{' '}
+              {filterReservations('future').length > 0 && (
+                <Badge bg="primary" pill>
+                  {filterReservations('future').length}
+                </Badge>
+              )}
+            </span>
+          }
         >
           {filterReservations('future').length > 0 ? (
             <ListGroup>
@@ -205,10 +343,7 @@ const MyReservations: React.FC = () => {
             </ListGroup>
           ) : renderEmptyMessage('upcoming')}
         </Tab>
-        <Tab
-          eventKey="past"
-          title={<span><i className="fas fa-history me-2"></i>Past</span>}
-        >
+        <Tab eventKey="past" title="Past">
           {filterReservations('past').length > 0 ? (
             <ListGroup>
               {filterReservations('past').map(renderReservation)}
@@ -216,6 +351,7 @@ const MyReservations: React.FC = () => {
           ) : renderEmptyMessage('past')}
         </Tab>
       </Tabs>
+
 
       <SiteDetailsOffcanvas
         show={showSiteDetails}
@@ -257,6 +393,28 @@ const MyReservations: React.FC = () => {
         onRemoveSite={async () => { }}
         userRole="member"  // Force member view
       />
+
+      <ReservationCreateForm
+        show={showCreateForm}
+        onHide={() => setShowCreateForm(false)}
+        onReservationCreated={fetchReservations}
+      />
+
+        <ReservationDetailsOffcanvas
+          show={showReservationDetails}
+          onHide={() => setShowReservationDetails(false)}
+          reservation={selectedReservation}
+          onReservationUpdated={fetchReservations}
+          onReservationDeleted={fetchReservations}
+          onResourceClick={(resource) => {
+            setSelectedResource(resource);
+            setShowResourceDetails(true);
+          }}
+          onSiteClick={(site) => {
+            setSelectedSite(site);
+            setShowSiteDetails(true);
+          }}
+        />
     </div>
   );
 };
