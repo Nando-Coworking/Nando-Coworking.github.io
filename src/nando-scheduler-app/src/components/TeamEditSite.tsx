@@ -3,6 +3,8 @@ import { Offcanvas, Form, Button, Alert } from 'react-bootstrap';
 import { supabase } from '../supabaseClient';
 import { useToast } from '../ToastContext';
 import { Site } from '../types/site';
+import { useAuth } from '../AuthContext';
+import { Team } from '../types/team';
 
 interface Props {
     show: boolean;
@@ -19,6 +21,7 @@ export const TeamEditSite: React.FC<Props> = ({
     onSiteUpdated,
     onSiteDeleted // Add this prop
 }) => {
+    const { user } = useAuth();  // Add this line
     const { addToast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false); // Add this state
@@ -33,6 +36,8 @@ export const TeamEditSite: React.FC<Props> = ({
         phone: ''
     });
     const [validated, setValidated] = useState(false);
+    const [teams, setTeams] = useState<Team[]>([]);
+    const [selectedTeamId, setSelectedTeamId] = useState<string>('');
 
     useEffect(() => {
         if (site) {
@@ -49,13 +54,39 @@ export const TeamEditSite: React.FC<Props> = ({
         }
     }, [site]);
 
+    useEffect(() => {
+        if (site) {
+            setSelectedTeamId(site.team_id);
+        }
+    }, [site]);
+
+    useEffect(() => {
+        const fetchTeams = async () => {
+            try {
+                if (!user?.id) return;
+
+                const { data, error } = await supabase
+                    .rpc('get_team_with_member_count', {
+                        _user_id: user.id
+                    });
+
+                if (error) throw error;
+                setTeams(data.filter(g => ['owner', 'admin'].includes(g.user_role || '')));
+            } catch (error) {
+                console.error('Error fetching teams:', error);
+                addToast('Error fetching teams', 'error');
+            }
+        };
+
+        fetchTeams();
+    }, [user]);
+
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
         setValidated(true);
 
-        // Validate mandatory fields
-        if (!formData.name || !formData.city || !formData.state) {
-            addToast('Name, City, and State are required fields', 'error');
+        if (!formData.name || !formData.city || !formData.state || !selectedTeamId) {
+            addToast('Name, City, State, and Team are required fields', 'error');
             return;
         }
 
@@ -65,6 +96,7 @@ export const TeamEditSite: React.FC<Props> = ({
                 .from('sites')
                 .update({
                     ...formData,
+                    team_id: selectedTeamId,
                     slug_name: formData.name.toLowerCase().replace(/\s+/g, '-')
                 })
                 .eq('id', site.id);
@@ -75,8 +107,8 @@ export const TeamEditSite: React.FC<Props> = ({
             onSiteUpdated();
             onHide();
         } catch (error) {
-            console.error('Error updating location:', error);
-            addToast('Error updating location', 'error');
+            console.error('Error updating site:', error);
+            addToast('Error updating site', 'error');
         } finally {
             setIsSaving(false);
         }
@@ -239,6 +271,30 @@ export const TeamEditSite: React.FC<Props> = ({
                             onChange={e => setFormData({ ...formData, phone: e.target.value })}
                             placeholder="Enter phone number"
                         />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3">
+                        <Form.Label>Team <span className="text-danger">*</span></Form.Label>
+                        <Form.Select
+                            value={selectedTeamId}
+                            onChange={(e) => setSelectedTeamId(e.target.value)}
+                            required
+                            isInvalid={validated && !selectedTeamId}
+                        >
+                            <option value="">Select a team...</option>
+                            {teams.map(team => (
+                                <option 
+                                    key={team.id} 
+                                    value={team.id}
+                                    defaultValue={team.id === site?.team_id}
+                                >
+                                    {team.name}
+                                </option>
+                            ))}
+                        </Form.Select>
+                        <Form.Control.Feedback type="invalid">
+                            Please select a team
+                        </Form.Control.Feedback>
                     </Form.Group>
 
                     <div className="d-flex justify-content-end gap-2">

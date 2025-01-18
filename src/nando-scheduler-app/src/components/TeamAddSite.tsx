@@ -41,7 +41,7 @@ export const TeamAddSite: React.FC<Props> = ({
         const fetchTeams = async () => {
             try {
                 if (!user?.id) return; // Add this check
-                
+
                 const { data, error } = await supabase
                     .rpc('get_team_with_member_count', {
                         _user_id: user.id
@@ -119,8 +119,8 @@ export const TeamAddSite: React.FC<Props> = ({
                         <i className="fas fa-building me-2"></i>Add Site
                     </Offcanvas.Title>
                     <div className="text-muted" style={{ fontSize: '0.85em' }}>
-                        {team ? 
-                            `Add a new site to ${team.name}` : 
+                        {team ?
+                            `Add a new site to ${team.name}` :
                             'Add a new site to one of your teams'
                         }
                     </div>
@@ -251,30 +251,36 @@ export const TeamAddSite: React.FC<Props> = ({
                             placeholder="Enter phone number"
                         />
                     </Form.Group>
-
-                    <div className="d-flex justify-content-end gap-2">
-                        <Button variant="light" onClick={onHide}>
-                            <i className="fas fa-chevron-left me-2"></i>Back
-                        </Button>
-                        <Button 
-                            variant="primary"
-                            type="submit"
-                            disabled={isSaving}
-                        >
-                            {isSaving ? (
-                                <>
-                                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                    Saving...
-                                </>
-                            ) : (
-                                <>
-                                    <i className="fas fa-save me-2"></i>Save Changes
-                                </>
-                            )}
-                        </Button>
-                    </div>
                 </Form>
             </Offcanvas.Body>
+            <div className="border-top mx-n3 px-3 py-3 mt-auto">
+                <div className="d-flex justify-content-end">
+                    <Button
+                        variant="light"
+                        onClick={onHide}
+                        className="me-2"
+                    >
+                        <i className="fas fa-chevron-left me-2"></i>Back
+                    </Button>
+                    <Button
+                        variant="primary"
+                        type="submit"
+                        onClick={handleSubmit}
+                        disabled={isSaving}
+                    >
+                        {isSaving ? (
+                            <>
+                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Saving...
+                            </>
+                        ) : (
+                            <>
+                                <i className="fas fa-save me-2"></i>Save Changes
+                            </>
+                        )}
+                    </Button>
+                </div>
+            </div>
         </Offcanvas>
     );
 };

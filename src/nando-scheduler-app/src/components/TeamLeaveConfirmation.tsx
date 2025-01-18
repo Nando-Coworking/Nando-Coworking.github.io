@@ -41,14 +41,20 @@ export const TeamLeaveConfirmation: React.FC<Props> = ({
                     <li>Future scheduling capabilities</li>
                 </ul>
             </Alert>
-            
+
             <p className="text-muted small mt-3">
-                This action cannot be undone. If you need access again in the future, 
+                This action cannot be undone. If you need access again in the future,
                 a team admin or owner will need to add you back to the team.
             </p>
+        </Offcanvas.Body>
 
-            <div className="d-flex justify-content-end gap-2 mt-4">
-                <Button variant="light" onClick={onHide}>
+        <div className="border-top mx-n3 px-3 py-3 mt-auto">
+            <div className="d-flex justify-content-end">
+                <Button
+                    variant="light"
+                    onClick={onHide}
+                    className="me-2"
+                >
                     <i className="fas fa-chevron-left me-2"></i>Back
                 </Button>
                 <Button
@@ -69,6 +75,6 @@ export const TeamLeaveConfirmation: React.FC<Props> = ({
                     )}
                 </Button>
             </div>
-        </Offcanvas.Body>
+        </div>
     </Offcanvas>
 );

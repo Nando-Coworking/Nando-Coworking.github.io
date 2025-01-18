@@ -56,7 +56,7 @@ export const ResourceAmenityAddForm: React.FC<Props> = ({
     }, [show]);
 
     const filteredAmenities = amenities
-        .filter(a => 
+        .filter(a =>
             a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             a.description.toLowerCase().includes(searchTerm.toLowerCase())
         );
@@ -80,7 +80,7 @@ export const ResourceAmenityAddForm: React.FC<Props> = ({
     const handleAmenitySelect = async (e: React.MouseEvent, amenity: Amenity) => {
         e.preventDefault();
         e.stopPropagation();
-        
+
         setSelectedAmenity(amenity);
         const existingNames = await fetchExistingNames(amenity.id);
         setExistingNames(existingNames);
@@ -136,28 +136,48 @@ export const ResourceAmenityAddForm: React.FC<Props> = ({
     };
 
     return (
-        <Offcanvas show={show} onHide={handleHide} placement="end">
-            <Offcanvas.Header closeButton className="border-bottom">
-                <div>
-                    <Offcanvas.Title>
-                        <i className="fas fa-plus me-2"></i>Add Amenity
-                    </Offcanvas.Title>
-                    <div className="text-muted" style={{ fontSize: '0.85em' }}>
-                        Add an amenity to this resource
-                    </div>
-                </div>
-            </Offcanvas.Header>
-            <Offcanvas.Body>
-                <Form onSubmit={handleSubmit}>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Search Amenities</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Search by name or description..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+        <Form onSubmit={handleSubmit}>
+            <Offcanvas show={show} onHide={handleHide} placement="end">
+                <Offcanvas.Header 
+                    className="border-bottom" 
+                    closeVariant="white"
+                >
+                    <div className="w-100">
+                        <button 
+                            type="button" 
+                            className="btn-close" 
+                            onClick={handleHide}
+                            style={{
+                                position: 'absolute',
+                                right: '1rem',
+                                top: '2rem',
+                                zIndex: 2
+                            }}
                         />
-                    </Form.Group>
+                        <Offcanvas.Title>
+                            <i className="fas fa-plus me-2"></i>Add Amenity
+                        </Offcanvas.Title>
+                        <div className="text-muted mb-3" style={{ fontSize: '0.85em' }}>
+                            Add an amenity to this resource
+                        </div>
+                        
+                        <Form.Group>
+                            <div className="input-group">
+                                <span className="input-group-text">
+                                    <i className="fas fa-search"></i>
+                                </span>
+                                <Form.Control
+                                    type="text"
+                                    placeholder="Search amenities..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="border-start-0"
+                                />
+                            </div>
+                        </Form.Group>
+                    </div>
+                </Offcanvas.Header>
+                <Offcanvas.Body>
 
                     {loading ? (
                         <div className="text-center py-3">
@@ -200,13 +220,17 @@ export const ResourceAmenityAddForm: React.FC<Props> = ({
                         </Form.Group>
                     )}
 
-                    <div className="d-flex justify-content-end gap-2">
-                        <Button variant="light" onClick={handleHide}>
+
+
+                </Offcanvas.Body>
+                <div className="border-top mx-n3 px-3 py-3 mt-auto">
+                    <div className="d-flex justify-content-end">
+                        <Button variant="light" onClick={handleHide} className="me-2">
                             <i className="fas fa-chevron-left me-2"></i>Back
                         </Button>
-                        <Button 
+                        <Button
                             variant="primary"
-                            type="submit"
+                            onClick={handleSubmit}
                             disabled={!selectedAmenity || isSaving}
                         >
                             {isSaving ? (
@@ -221,8 +245,9 @@ export const ResourceAmenityAddForm: React.FC<Props> = ({
                             )}
                         </Button>
                     </div>
-                </Form>
-            </Offcanvas.Body>
-        </Offcanvas>
+                </div>
+
+            </Offcanvas>
+        </Form>
     );
 };

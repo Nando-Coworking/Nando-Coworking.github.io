@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Offcanvas, Form, Button, ListGroup, Badge } from 'react-bootstrap';
 import { Team, TeamUser } from '../types/team';
 import { supabase } from '../supabaseClient';
@@ -6,6 +6,7 @@ import { useAuth } from '../AuthContext';
 import { useToast } from '../ToastContext';
 import { TeamMemberEdit } from './TeamMemberEdit';
 import { Site } from '../types/site';
+import { SiteDetailsOffcanvas } from './SiteDetailsOffcanvas';
 
 interface Props {
     show: boolean;
@@ -54,7 +55,7 @@ export const TeamDetailsOffcanvas: React.FC<Props> = ({
     rolePriority,
     onEditClick,
     onShowLeaveConfirm,
-    sites = [],
+    sites: initialSites, // Rename prop to avoid conflict
     onAddSite,
     onEditSite,
     onRemoveSite
@@ -65,6 +66,66 @@ export const TeamDetailsOffcanvas: React.FC<Props> = ({
 
     // Add state for member editing
     const [editingMember, setEditingMember] = useState<TeamUser | null>(null);
+
+    // Add new state for site details
+    const [showSiteDetails, setShowSiteDetails] = useState(false);
+    const [selectedSite, setSelectedSite] = useState<Site | null>(null);
+
+    // Add state for sites
+    const [sites, setSites] = useState<Site[]>(initialSites);
+
+    // Add refresh trigger state near other states
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+    // Fetch sites when selectedTeam changes
+    useEffect(() => {
+        if (selectedTeam) {
+            fetchSites();
+        }
+    }, [selectedTeam, refreshTrigger]);
+
+    const fetchSites = async () => {
+        // First get sites with resource counts
+        const { data: sites, error } = await supabase
+            .from('sites')
+            .select(`
+                *,
+                resource_count:resources(count),
+                resources!left (id, max_occupants)
+            `)
+            .eq('team_id', selectedTeam?.id);
+
+        if (error) {
+            console.error('Error fetching sites:', error);
+            return;
+        }
+
+        // Then get aggregated data
+        const { data: siteStats, error: statsError } = await supabase
+            .from('sites')
+            .select(`
+                id,
+                resource_stats:resources(count)
+            `)
+            .eq('team_id', selectedTeam?.id);
+
+        if (statsError) {
+            console.error('Error fetching site stats:', statsError);
+            return;
+        }
+
+        // Combine data
+        const sitesWithStats = sites?.map(site => {
+            const stats = siteStats?.find(s => s.id === site.id);
+            return {
+                ...site,
+                resource_count: site.resources?.length || 0,
+                total_capacity: site.resources?.reduce((sum, r) => sum + (r.max_occupants || 0), 0) || 0
+            };
+        });
+
+        setSites(sitesWithStats || []);
+    };
 
     return (
         <Offcanvas show={show} onHide={onHide} placement="end">
@@ -114,18 +175,36 @@ export const TeamDetailsOffcanvas: React.FC<Props> = ({
                             >
                                 <div>
                                     <div>{teamUser.email}</div>
-                                    <Badge
-                                        bg={teamUser.role === 'owner' ? 'primary' :
-                                            teamUser.role === 'admin' ? 'warning' :
-                                                'info'}
-                                        text={teamUser.role === 'owner' ? undefined : 'dark'}
-                                    >
-                                        <i className={`fas fa-${teamUser.role === 'owner' ? 'power-off' :
-                                            teamUser.role === 'admin' ? 'lock' :
-                                                'user'
-                                            } me-1`}></i>
-                                        {teamUser.role}
-                                    </Badge>
+                                    <div className="d-flex gap-2">
+                                        <Badge
+                                            bg={teamUser.role === 'owner' ? 'primary' :
+                                                teamUser.role === 'admin' ? 'warning' :
+                                                    'info'}
+                                            text={teamUser.role === 'owner' ? undefined : 'dark'}
+                                            className="rounded-pill fw-normal"
+                                            style={{
+                                                fontSize: '0.65em',
+                                                padding: '0.35em 0.75em'
+                                            }}
+                                        >
+                                            <i className={`fas fa-${teamUser.role === 'owner' ? 'power-off' :
+                                                teamUser.role === 'admin' ? 'lock' :
+                                                    'user'
+                                                } me-1`}></i>
+                                            {teamUser.role}
+                                        </Badge>
+                                        <Badge
+                                            bg="secondary"
+                                            className="rounded-pill fw-normal"
+                                            style={{
+                                                fontSize: '0.65em',
+                                                padding: '0.35em 0.75em'
+                                            }}
+                                        >
+                                            <i className="fas fa-calendar me-1"></i>
+                                            {teamUser.reservation_count || 0} Reservations
+                                        </Badge>
+                                    </div>
                                 </div>
                                 <div>
                                     {canManageMembers(selectedTeam?.user_role) &&
@@ -182,28 +261,73 @@ export const TeamDetailsOffcanvas: React.FC<Props> = ({
                         sites.map(site => (
                             <ListGroup.Item
                                 key={site.id}
-                                className="d-flex justify-content-between align-items-center"
+                                className="d-flex p-0"
                             >
-                                <div>
-                                    <div>{site.name}</div>
-                                    <small className="text-muted">
-                                        {site.city}, {site.state}
-                                    </small>
+                                <div
+                                    className="d-flex flex-column flex-grow-1 p-3 min-width-0 overflow-hidden"
+                                    role="button"
+                                    onClick={() => {
+                                        setSelectedSite(site);
+                                        setShowSiteDetails(true);
+                                    }}
+                                    style={{ cursor: 'pointer' }}
+                                >
+                                    <div className="text-truncate w-100">{site.name}</div>
+                                    <div 
+                                        className="text-muted text-truncate w-100"
+                                        style={{ fontSize: '0.85em' }}
+                                    >
+                                        {site.description}
+                                    </div>
+                                    <div className="d-flex gap-2 mt-1 flex-wrap">
+                                        <Badge
+                                            bg="info"
+                                            text="dark"
+                                            className="rounded-pill fw-normal"
+                                            style={{
+                                                fontSize: '0.65em',
+                                                padding: '0.35em 0.75em'
+                                            }}
+                                        >
+                                            <i className="fas fa-door-open me-1"></i>
+                                            {site.resource_count || 0} resources
+                                        </Badge>
+                                        <Badge
+                                            bg="secondary"
+                                            className="rounded-pill fw-normal"
+                                            style={{
+                                                fontSize: '0.65em',
+                                                padding: '0.35em 0.75em'
+                                            }}
+                                        >
+                                            <i className="fas fa-users me-1"></i>
+                                            {site.total_capacity || 0} capacity
+                                        </Badge>
+                                    </div>
                                 </div>
-                                <div>
-                                    {canManageMembers(selectedTeam?.user_role) && (
-                                        <>
-                                            <Button
-                                                variant="outline-secondary"
-                                                size="sm"
-                                                onClick={() => onEditSite(site)}
-                                                className=""
-                                            >
-                                                <i className="fas fa-edit"></i>
-                                            </Button>
-                                        </>
-                                    )}
-                                </div>
+                                {canManageMembers(selectedTeam?.user_role) && (
+                                    <div 
+                                        className="d-flex align-items-center" 
+                                        style={{ 
+                                            minWidth: '60px',
+                                            width: '60px',
+                                            borderLeft: '1px solid rgb(230, 229, 229)',
+                                            padding: '0.5rem'
+                                        }}
+                                    >
+                                        <Button
+                                            variant="outline-secondary"
+                                            size="sm"
+                                            className="mx-auto"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onEditSite(site);
+                                            }}
+                                        >
+                                            <i className="fas fa-edit"></i>
+                                        </Button>
+                                    </div>
+                                )}
                             </ListGroup.Item>
                         ))
                     )}
@@ -262,6 +386,24 @@ export const TeamDetailsOffcanvas: React.FC<Props> = ({
                     </Button>
                 </div>
             </div>
+            {/* Add the SiteDetailsOffcanvas component before the closing Offcanvas tag */}
+            <SiteDetailsOffcanvas
+                show={showSiteDetails}
+                onHide={() => {
+                    setShowSiteDetails(false);
+                    setSelectedSite(null);
+                    setRefreshTrigger(prev => prev + 1); // Trigger refresh
+                }}
+                site={selectedSite}
+                userRole={selectedTeam?.user_role}  // Pass the user's role in this team
+                onEdit={() => {
+                    setShowSiteDetails(false);
+                    if (selectedSite) {
+                        onEditSite(selectedSite);
+                    }
+                    setRefreshTrigger(prev => prev + 1); // Trigger refresh
+                }}
+            />
         </Offcanvas>
     );
 };

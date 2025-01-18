@@ -7,6 +7,7 @@ import { Resource } from '../types/resource';
 import { ResourceAddForm } from './ResourceAddForm';
 import { ResourceEditForm } from './ResourceEditForm';
 import { ResourceDetailsOffcanvas } from './ResourceDetailsOffcanvas'; // Import the new component
+import { TeamEditSite } from './TeamEditSite';
 
 interface Props {
   show: boolean;
@@ -30,6 +31,7 @@ export const SiteDetailsOffcanvas: React.FC<Props> = ({
   const [showEditResource, setShowEditResource] = useState(false);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [showResourceDetails, setShowResourceDetails] = useState(false); // New state variable
+  const [showEditForm, setShowEditForm] = useState(false);
   const canManage = ['owner', 'admin'].includes(userRole || '');
 
   const fetchResources = async () => {
@@ -73,7 +75,7 @@ export const SiteDetailsOffcanvas: React.FC<Props> = ({
 
   return (
     <Offcanvas show={show} onHide={onHide} placement="end">
-      <Offcanvas.Header closeButton className="border-bottom">
+      <Offcanvas.Header className="border-bottom">
         <div>
           <Offcanvas.Title>
             <i className="fas fa-building me-2"></i>{site.name}
@@ -82,15 +84,30 @@ export const SiteDetailsOffcanvas: React.FC<Props> = ({
             View site details
           </div>
         </div>
-        {canManage && (
-          <Button
-            variant="outline-primary"
-            size="sm"
-            onClick={onEdit}
-          >
-            <i className="fas fa-edit me-2"></i>Edit
-          </Button>
-        )}
+        <button
+          type="button"
+          className="btn-close"
+          onClick={onHide}
+          style={{
+            position: 'absolute',
+            right: '1rem',
+            top: '1.5rem',
+            zIndex: 2
+          }}
+        />
+        <Button
+          variant="outline-secondary"
+          size="sm"
+          onClick={() => setShowEditForm(true)}  // Instead of onEdit()
+          style={{
+            position: 'absolute',
+            right: '3.5rem',
+            top: '1rem',
+            zIndex: 2
+          }}
+        >
+          <i className="fas fa-edit"></i>
+        </Button>
       </Offcanvas.Header>
       <Offcanvas.Body>
         <ListGroup variant="flush">
@@ -243,6 +260,19 @@ export const SiteDetailsOffcanvas: React.FC<Props> = ({
           fetchResources();
           setShowResourceDetails(false);
           setSelectedResource(null);
+        }}
+      />
+
+      <TeamEditSite
+        show={showEditForm}
+        onHide={() => setShowEditForm(false)}
+        site={site}
+        onSiteUpdated={() => {
+          fetchResources();
+          setShowEditForm(false);
+        }}
+        onSiteDeleted={() => {
+          if (onEdit) onEdit(); // Keep original behavior for deletion
         }}
       />
     </Offcanvas>

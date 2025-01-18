@@ -26,6 +26,31 @@ export const SiteCard: React.FC<Props> = ({ site, onManage, userRole }) => {
                     </Badge>
                 </Card.Title>
                 <Card.Text className="text-truncate-2">{site.description}</Card.Text>
+                <div className="mt-2 mb-3 d-flex gap-2">
+                    <Badge
+                        bg="info"
+                        text="dark"
+                        className="rounded-pill fw-normal"
+                        style={{
+                            fontSize: '0.65em',
+                            padding: '0.35em 0.75em'
+                        }}
+                    >
+                        <i className="fas fa-door-open me-1"></i>
+                        {site.resources?.length || 0} resources
+                    </Badge>
+                    <Badge
+                        bg="secondary"
+                        className="rounded-pill fw-normal"
+                        style={{
+                            fontSize: '0.65em',
+                            padding: '0.35em 0.75em'
+                        }}
+                    >
+                        <i className="fas fa-users me-1"></i>
+                        {site.resources?.reduce((sum, r) => sum + (r.max_occupants || 0), 0) || 0} capacity
+                    </Badge>
+                </div>
                 <div className="mt-auto">
                     <small className="text-muted d-block">
                         <i className="fas fa-map-marker-alt me-1"></i>

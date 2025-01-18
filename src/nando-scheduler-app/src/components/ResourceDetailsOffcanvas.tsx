@@ -72,8 +72,34 @@ export const ResourceDetailsOffcanvas: React.FC<Props> = ({
 
     return (
         <Offcanvas show={show} onHide={onHide} placement="end">
-            <Offcanvas.Header closeButton className="border-bottom">
+            <Offcanvas.Header className="border-bottom position-relative">
                 <div>
+                    <button 
+                        type="button" 
+                        className="btn-close" 
+                        onClick={onHide}
+                        style={{
+                            position: 'absolute',
+                            right: '1rem',
+                            top: '1.5rem',
+                            zIndex: 2
+                        }}
+                    />
+                    {canManage && (
+                        <Button
+                            variant="outline-secondary"
+                            size="sm"
+                            onClick={() => setShowEditForm(true)}
+                            style={{
+                                position: 'absolute',
+                                right: '3.5rem',
+                                top: '1rem',
+                                zIndex: 2
+                            }}
+                        >
+                            <i className="fas fa-edit"></i>
+                        </Button>
+                    )}
                     <Offcanvas.Title>
                         <i className="fas fa-box me-2"></i>{resource.name}
                     </Offcanvas.Title>
@@ -81,15 +107,6 @@ export const ResourceDetailsOffcanvas: React.FC<Props> = ({
                         View resource details
                     </div>
                 </div>
-                {canManage && (
-                    <Button
-                        variant="outline-primary"
-                        size="sm"
-                        onClick={() => setShowEditForm(true)}
-                    >
-                        <i className="fas fa-edit me-2"></i>Edit
-                    </Button>
-                )}
             </Offcanvas.Header>
             <Offcanvas.Body>
                 <ListGroup variant="flush">

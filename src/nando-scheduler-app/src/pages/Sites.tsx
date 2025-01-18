@@ -32,6 +32,10 @@ const Sites: React.FC = () => {
         .from('sites')
         .select(`
           *,
+          resources (
+              id,
+              max_occupants
+          ),
           teams:team_id (
             name,
             team_users!inner (

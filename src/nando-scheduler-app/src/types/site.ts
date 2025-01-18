@@ -11,4 +11,10 @@ export interface Site {
     phone?: string;
     slug_name?: string;
     base64_image?: string;
+    resources?: Array<{
+        id: string;
+        max_occupants: number;
+    }>;
+    resource_count?: number;
+    total_capacity?: number;
 }
