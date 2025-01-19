@@ -208,7 +208,8 @@ const [selectedSite, setSelectedSite] = useState<Site | null>(null);
         console.error('Error fetching sites:', error);
         return;
       }
-      setSites(data || []);
+      const filteredSites = (data || []).filter(site => site.resources.length > 0);
+      setSites(filteredSites || []);
     };
 
     fetchSites();
