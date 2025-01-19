@@ -193,9 +193,9 @@ const MyReservations: React.FC = () => {
         </div>
         {reservation.description && <p>{reservation.description}</p>}
         
-        <div className="d-flex mb-2">
-          <div style={{ width: '80px' }}>
-            <small className="text-muted">
+        <div className="d-flex flex-column flex-md-row mb-2">
+          <div className="mb-2 mb-md-0" style={{ width: '80px' }}>
+            <small className="text-muted d-block d-md-inline">
               <i className="fas fa-users me-1"></i>Who:
             </small>
           </div>
@@ -205,9 +205,9 @@ const MyReservations: React.FC = () => {
         </div>
   
         {reservation.resources && (
-          <div className="d-flex mb-2">
-            <div style={{ width: '80px' }}>
-              <small className="text-muted">
+          <div className="d-flex flex-column flex-md-row mb-2">
+            <div className="mb-2 mb-md-0" style={{ width: '80px' }}>
+              <small className="text-muted d-block d-md-inline">
                 <i className="fas fa-location-dot me-1"></i>Where:
               </small>
             </div>
@@ -259,9 +259,9 @@ const MyReservations: React.FC = () => {
           </div>
         )}
   
-        <div className="d-flex mb-2">
-          <div style={{ width: '80px' }}>
-            <small className="text-muted">
+        <div className="d-flex flex-column flex-md-row mb-2">
+          <div className="mb-2 mb-md-0" style={{ width: '80px' }}>
+            <small className="text-muted d-block d-md-inline">
               <i className="fas fa-clock me-1"></i>When:
             </small>
           </div>

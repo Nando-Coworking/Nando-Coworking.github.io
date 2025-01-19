@@ -3,7 +3,7 @@ import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import crypto from 'crypto';
-import { Form } from 'react-bootstrap';
+import { Form, Container, Row, Col } from 'react-bootstrap';
 import '../styles/react-big-calendar.css';  // Update this import path
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient'; // Add this import
@@ -332,7 +332,7 @@ const Scheduler: React.FC = () => {
   // Add handler for slot selection
   const handleSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
     if (!selectedSiteId || !selectedResourceId) {
-      addToast('Please select a location and resource first', 'warning');
+      addToast('Please select a site and resource first', 'warning');
       return;
     }
 
@@ -341,41 +341,37 @@ const Scheduler: React.FC = () => {
   };
 
   return (
-    <>
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h3><i className="fas fa-calendar-days me-2"></i>Scheduler</h3>
-
-        <Form className="d-flex align-items-center gap-3">
-          <Form.Group className="mb-0">
-            <div className="d-flex align-items-center">
-              <Form.Label htmlFor="site" className="me-2 mb-0">Location:</Form.Label>
+    <Container fluid className="p-3">
+      {/* Header row with title and filters */}
+      <Row className="mb-3">
+        <Col xs={12} md={6}>
+          <h3><i className="fas fa-calendar-days me-2"></i>Scheduler</h3>
+        </Col>
+        <Col xs={12} md={6}>
+          <div className="d-flex flex-column flex-md-row gap-2 justify-content-md-end">
+            <Form.Group className="flex-grow-1 flex-md-grow-0" style={{minWidth: '200px'}}>
+              <Form.Label htmlFor="site">Site:</Form.Label>
               <Form.Select
                 id="site"
                 value={selectedSiteId}
                 onChange={handleSiteChange}
-                className="form-select-sm"
-                style={{ width: '200px' }}
               >
-                <option value="">All Locations</option>
+                <option value="">All Sites</option>
                 {sites.map((site) => (
                   <option key={site.id} value={site.id}>
                     {site.name}
                   </option>
                 ))}
               </Form.Select>
-            </div>
-          </Form.Group>
+            </Form.Group>
 
-          <Form.Group className="mb-0">
-            <div className="d-flex align-items-center">
-              <Form.Label htmlFor="resource" className="me-2 mb-0">Resource:</Form.Label>
+            <Form.Group className="flex-grow-1 flex-md-grow-0" style={{minWidth: '200px'}}>
+              <Form.Label htmlFor="resource">Resource:</Form.Label>
               <Form.Select
                 id="resource"
                 value={selectedResourceId}
                 onChange={handleResourceChange}
                 disabled={!selectedSiteId}
-                className="form-select-sm"
-                style={{ width: '200px' }}
               >
                 <option value="">All Resources</option>
                 {selectedSiteId && sites
@@ -386,28 +382,57 @@ const Scheduler: React.FC = () => {
                     </option>
                   ))}
               </Form.Select>
-            </div>
-          </Form.Group>
-        </Form>
-      </div>
+            </Form.Group>
+          </div>
+        </Col>
+      </Row>
 
-      <Calendar
-        localizer={localizer}
-        events={events}
-        startAccessor="start"
-        endAccessor="end"
-        defaultView={Views.MONTH}
-        views={['month', 'week', 'day']}
-        style={{ height: 600 }}
-        onSelectEvent={handleEventClick}  // Add this line
-        selectable={true}
-        onSelectSlot={handleSelectSlot}
-        components={{
-          event: EventComponent
-        }}
-      />
+      <Row>
+        <Col xs={12}>
+          <Calendar
+            localizer={localizer}
+            events={events}
+            startAccessor="start"
+            endAccessor="end"
+            defaultView={Views.MONTH}
+            views={['month', 'week', 'day']}
+            style={{ height: 500 }}
+            onSelectEvent={handleEventClick}
+            selectable={true}
+            onSelectSlot={handleSelectSlot}
+            components={{
+              event: EventComponent
+            }}
+          />
+        </Col>
+      </Row>
+      
+      {/* ... rest of the component remains the same ... */}
+      {/* Add a custom class to the offcanvas components for mobile */}
+      <style>
+        {`
+          @media (max-width: 768px) {
+            .offcanvas {
+              height: auto !important;
+              max-height: 90vh !important;
+            }
+            .offcanvas-body {
+              height: auto !important;
+              max-height: calc(90vh - 160px) !important;
+              overflow-y: auto;
+            }
+            .offcanvas-footer {
+              position: sticky;
+              bottom: 0;
+              background: var(--bs-body-bg);
+              padding: 1rem;
+              border-top: 1px solid var(--bs-border-color);
+            }
+          }
+        `}
+      </style>
 
-      {/* Add this at the bottom */}
+      {/* Rest of the Offcanvas components remain the same */}
       <ResourceDetailsOffcanvas
         show={showResourceDetails}
         onHide={() => {
@@ -455,7 +480,7 @@ const Scheduler: React.FC = () => {
           end_time: selectedSlot ? moment(selectedSlot.end).format('YYYY-MM-DDTHH:mm') : undefined
         }}
       />
-    </>
+    </Container>
   );
 };
 
