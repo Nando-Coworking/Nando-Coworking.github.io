@@ -22,6 +22,7 @@ import ChangePassword from './pages/auth/ChangePassword';
 import Cookies from 'js-cookie';
 import Teams from './pages/Teams';
 import Sites from './pages/Sites';
+import './index.css';
 
 // Add this function before the App component
 const applyTheme = (selectedTheme: 'auto' | 'light' | 'dark') => {
