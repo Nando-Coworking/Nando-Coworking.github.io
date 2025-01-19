@@ -263,7 +263,7 @@ export const SiteDetailsOffcanvas: React.FC<Props> = ({
         }}
       />
 
-      <SiteEditor
+      <SiteEdit
         show={showEditForm}
         onHide={() => setShowEditForm(false)}
         site={site}

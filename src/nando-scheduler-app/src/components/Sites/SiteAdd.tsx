@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Offcanvas, Form, Button } from 'react-bootstrap';
-import { supabase } from '../supabaseClient';
-import { useToast } from '../ToastContext';
-import { useAuth } from '../AuthContext'; // Add this import
-import { Team } from '../types/team';
+import { supabase } from '../../supabaseClient';
+import { useToast } from '../../ToastContext';
+import { useAuth } from '../../AuthContext'; // Add this import
+import { Team } from '../../types/team';
 
 interface Props {
     show: boolean;

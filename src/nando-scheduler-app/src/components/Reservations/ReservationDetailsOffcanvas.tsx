@@ -6,6 +6,7 @@ import { useAuth } from '../../AuthContext';
 // Import timezone support
 import moment from 'moment-timezone';
 import { ReservationEditForm } from './ReservationEditForm';
+import { ReservationDeleteConfirmation } from './ReservationDeleteConfirmation';
 
 interface Props {
   show: boolean;
@@ -30,6 +31,14 @@ export const ReservationDetailsOffcanvas: React.FC<Props> = ({
   const { addToast } = useToast();
   const [showEditForm, setShowEditForm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Add state to track the local reservation data
+  const [localReservation, setLocalReservation] = useState<Reservation | null>(null);
+
+  // Update useEffect to set initial reservation
+  useEffect(() => {
+    setLocalReservation(reservation);
+  }, [reservation]);
 
   const formatDateTime = (dateTime: string) => {
     if (!dateTime) return '';
@@ -38,10 +47,10 @@ export const ReservationDetailsOffcanvas: React.FC<Props> = ({
     return `${localTime.format('MMMM D, YYYY h:mm A')} (${zoneName})`;
   };
 
-  const canEdit = user?.id === reservation?.user_id && 
+  const canEdit = user?.id === reservation?.user_id &&
     moment(reservation?.end_time).isAfter(moment());
 
-  const canDelete = user?.id === reservation?.user_id && 
+  const canDelete = user?.id === reservation?.user_id &&
     moment(reservation?.start_time).isAfter(moment());
 
   const handleDelete = async () => {
@@ -64,12 +73,13 @@ export const ReservationDetailsOffcanvas: React.FC<Props> = ({
       addToast('Error deleting reservation', 'error');
     } finally {
       setIsDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
   const renderParticipants = () => {
     // Solo reservation
-    if (!reservation?.participants || reservation.participants.length === 0) {
+    if (!localReservation?.participants || localReservation.participants.length === 0) {
       return (
         <div className="d-flex gap-2 align-items-center">
           <Badge bg="success" className="rounded-pill">
@@ -78,20 +88,20 @@ export const ReservationDetailsOffcanvas: React.FC<Props> = ({
         </div>
       );
     }
-  
+
     // Group reservation
     return (
       <div className="d-flex gap-2 align-items-center">
-        <Badge 
-          bg={reservation.user_id === user?.id ? "primary" : "secondary"}
+        <Badge
+          bg={localReservation.user_id === user?.id ? "primary" : "secondary"}
           className="rounded-pill"
           style={{ fontSize: '0.75em' }}
         >
           <i className="fas fa-users me-1"></i>
-          {reservation.user_id === user?.id ? 'Owner' : 'Guest'}
+          {localReservation.user_id === user?.id ? 'Owner' : 'Guest'}
         </Badge>
         <div className="d-flex gap-2 flex-wrap">
-          {reservation.participants.map((email, index) => (
+          {localReservation.participants.map((email, index) => (
             <Badge
               key={index}
               bg="info"
@@ -108,6 +118,49 @@ export const ReservationDetailsOffcanvas: React.FC<Props> = ({
     );
   };
 
+  // Add a handler for successful edits
+  const handleReservationEdited = () => {
+    // First notify the parent component
+    onReservationUpdated();
+
+    // Then fetch the updated reservation details
+    if (reservation?.id) {
+      fetchUpdatedReservation(reservation.id);
+    }
+
+    setShowEditForm(false);
+  };
+
+  // Add function to fetch updated reservation
+  const fetchUpdatedReservation = async (reservationId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('reservations')
+        .select(`
+          *,
+          resources:resource_id (
+            *,
+            sites:site_id (
+              *,
+              teams:team_id (*)
+            )
+          )
+        `)
+        .eq('id', reservationId)
+        .single();
+
+      if (error) throw error;
+
+      // Update local state with fresh data
+      setLocalReservation(data);
+      // Notify parent
+      onReservationUpdated();
+    } catch (error) {
+      console.error('Error fetching updated reservation:', error);
+      addToast('Error refreshing reservation details', 'error');
+    }
+  };
+
   return (
     <>
       <Offcanvas show={show} onHide={onHide} placement="end">
@@ -120,9 +173,9 @@ export const ReservationDetailsOffcanvas: React.FC<Props> = ({
         </Offcanvas.Header>
         <Offcanvas.Body>
           <div>
-            <h5>{reservation?.title}</h5>
-            <p className="text-muted">{reservation?.description}</p>
-            
+            <h5>{localReservation?.title}</h5>
+            <p className="text-muted">{localReservation?.description}</p>
+
             {/* Info sections container */}
             <div className="border rounded overflow-hidden">
               {/* Who section */}
@@ -141,16 +194,24 @@ export const ReservationDetailsOffcanvas: React.FC<Props> = ({
                   <i className="fas fa-location-dot me-1"></i>Where:
                 </div>
                 <div className="flex-grow-1">
-                  {reservation?.resources?.name && (
-                    <Button variant="link" className="p-0" onClick={() => onResourceClick?.(reservation.resources)}>
-                      <i className="fas fa-box me-1"></i>{reservation.resources.name}
+                  {localReservation?.resources?.name && (
+                    <Button
+                      variant="link"
+                      className="p-0"
+                      onClick={() => onResourceClick?.(localReservation.resources)}
+                    >
+                      <i className="fas fa-box me-1"></i>{localReservation.resources.name}
                     </Button>
                   )}
-                  {reservation?.resources?.sites?.name && (
+                  {localReservation?.resources?.sites && (
                     <>
                       {" at "}
-                      <Button variant="link" className="p-0" onClick={() => onSiteClick?.(reservation.resources.sites)}>
-                        <i className="fas fa-building me-1"></i>{reservation.resources.sites.name}
+                      <Button
+                        variant="link"
+                        className="p-0"
+                        onClick={() => onSiteClick?.(localReservation.resources.sites)}
+                      >
+                        <i className="fas fa-building me-1"></i>{localReservation.resources.sites.name}
                       </Button>
                     </>
                   )}
@@ -163,8 +224,8 @@ export const ReservationDetailsOffcanvas: React.FC<Props> = ({
                   <i className="fas fa-clock me-1"></i>When:
                 </div>
                 <div className="flex-grow-1">
-                  <div>{formatDateTime(reservation?.start_time)}</div>
-                  <div>{formatDateTime(reservation?.end_time)}</div>
+                  <div>{formatDateTime(localReservation?.start_time)}</div>
+                  <div>{formatDateTime(localReservation?.end_time)}</div>
                 </div>
               </div>
             </div>
@@ -174,7 +235,10 @@ export const ReservationDetailsOffcanvas: React.FC<Props> = ({
         <div className="border-top mx-n3 px-3 py-3 mt-auto">
           <div className="d-flex justify-content-between">
             {canDelete && (
-              <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
+              <Button
+                variant="danger"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
                 <i className="fas fa-trash-alt me-2"></i>Delete
               </Button>
             )}
@@ -195,11 +259,16 @@ export const ReservationDetailsOffcanvas: React.FC<Props> = ({
       <ReservationEditForm
         show={showEditForm}
         onHide={() => setShowEditForm(false)}
-        reservation={reservation}
-        onReservationUpdated={() => {
-          onReservationUpdated();
-          setShowEditForm(false);
-        }}
+        reservation={localReservation}
+        onReservationUpdated={handleReservationEdited}
+      />
+
+      <ReservationDeleteConfirmation
+        show={showDeleteConfirm}
+        onHide={() => setShowDeleteConfirm(false)}
+        reservation={localReservation}
+        isDeleting={isDeleting}
+        onConfirmDelete={handleDelete}
       />
     </>
   );

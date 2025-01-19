@@ -4,10 +4,10 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../AuthContext';
 import { useToast } from '../ToastContext';
 import { Site } from '../types/site';
-import { TeamAddSite } from '../components/TeamAddSite';
-import { TeamEditSite } from '../components/TeamEditSite';
 import { SiteCard } from '../components/Sites/SiteCard';
 import { SiteDetailsOffcanvas } from '../components/Sites/SiteDetailsOffcanvas';
+import { SiteAdd } from '../components/Sites/SiteAdd';
+import { SiteEdit } from '../components/Sites/SiteEdit';
 
 const Sites: React.FC = () => {
   const { user } = useAuth();
@@ -105,7 +105,7 @@ const Sites: React.FC = () => {
         )}
       </Container>
 
-      <TeamAddSite
+      <SiteAdd
         show={showSiteForm}
         onHide={() => setShowSiteForm(false)}
         team={null}
@@ -123,7 +123,7 @@ const Sites: React.FC = () => {
         }}
       />
 
-      <TeamEditSite
+      <SiteEdit
         show={showEditSite}
         onHide={() => {
           setShowEditSite(false);

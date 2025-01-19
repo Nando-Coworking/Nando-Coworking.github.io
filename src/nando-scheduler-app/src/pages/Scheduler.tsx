@@ -8,10 +8,11 @@ import '../styles/react-big-calendar.css';  // Update this import path
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient'; // Add this import
 import { ResourceDetailsOffcanvas } from '../components/Resources/ResourceDetailsOffcanvas'; // Add this import
-import { ReservationDetailsOffcanvas } from '../components/ReservationDetailsOffcanvas'; // Add this import
+import { ReservationDetailsOffcanvas } from '../components/Reservations/ReservationDetailsOffcanvas'; // Add this import
 import { useAuth } from '../AuthContext';
 import { ReservationCreateForm } from '../components/Reservations/ReservationCreateForm';
 import { useToast } from '../ToastContext';
+import { SiteDetailsOffcanvas } from '../components/Sites/SiteDetailsOffcanvas';
 
 interface Site {
   id: string;
@@ -184,6 +185,8 @@ const Scheduler: React.FC = () => {
     start: Date;
     end: Date;
   } | null>(null);
+  const [showSiteDetails, setShowSiteDetails] = useState(false);
+const [selectedSite, setSelectedSite] = useState<Site | null>(null);
 
   // Fetch sites
   useEffect(() => {
@@ -458,7 +461,21 @@ const Scheduler: React.FC = () => {
           setSelectedResource(resource);
           setShowResourceDetails(true);
         }}
-        onSiteClick={() => { }} // No-op since we don't show site details in scheduler
+        onSiteClick={(site) => {
+          setSelectedSite(site);
+          setShowSiteDetails(true);
+        }}
+      />
+
+      <SiteDetailsOffcanvas
+        show={showSiteDetails}
+        onHide={() => {
+          setShowSiteDetails(false);
+          setSelectedSite(null);
+        }}
+        site={selectedSite}
+        userRole="member"
+        onEdit={() => {}}
       />
 
       <ReservationCreateForm

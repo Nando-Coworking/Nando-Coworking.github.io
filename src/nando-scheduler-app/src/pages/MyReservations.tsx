@@ -11,7 +11,7 @@ import { ResourceDetailsOffcanvas } from '../components/Resources/ResourceDetail
 import { TeamDetailsOffcanvas } from '../components/Team/TeamDetailsOffcanvas';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ReservationCreateForm } from '../components/Reservations/ReservationCreateForm';
-import { ReservationDetailsOffcanvas } from '../components/ReservationDetailsOffcanvas';
+import { ReservationDetailsOffcanvas } from '../components/Reservations/ReservationDetailsOffcanvas';
 import { useAuth } from '../AuthContext';
 
 interface Reservation {

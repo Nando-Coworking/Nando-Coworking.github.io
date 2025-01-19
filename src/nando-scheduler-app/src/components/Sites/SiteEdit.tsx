@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Offcanvas, Form, Button, Alert } from 'react-bootstrap';
-import { supabase } from '../supabaseClient';
-import { useToast } from '../ToastContext';
-import { Site } from '../types/site';
-import { useAuth } from '../AuthContext';
-import { Team } from '../types/team';
+import { supabase } from '../../supabaseClient';
+import { useToast } from '../../ToastContext';
+import { Site } from '../../types/site';
+import { useAuth } from '../../AuthContext';
+import { Team } from '../../types/team';
 
 interface Props {
     show: boolean;

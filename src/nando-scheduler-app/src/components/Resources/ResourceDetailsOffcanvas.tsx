@@ -3,7 +3,7 @@ import { Offcanvas, ListGroup, Button, Badge } from 'react-bootstrap';
 import { supabase } from '../../supabaseClient';
 import { useToast } from '../../ToastContext';
 import { Resource } from '../../types/resource';
-import { ResourceAmenity } from '../../types/ResourceAmenityTypes';
+import { ResourceAmenity } from '../../types/ResourceAmenity';
 import { ResourceEditForm } from './ResourceEditForm';
 import { ResourceAmenityAddForm } from './ResourceAmenityAddForm';
 import { ResourceAmenityDeleteConfirmation } from './ResourceAmenityDeleteConfirmation';
