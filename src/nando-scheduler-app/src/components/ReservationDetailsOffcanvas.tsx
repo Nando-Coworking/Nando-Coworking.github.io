@@ -32,9 +32,10 @@ export const ReservationDetailsOffcanvas: React.FC<Props> = ({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const formatDateTime = (dateTime: string) => {
+    if (!dateTime) return '';
     const localTime = moment.utc(dateTime).local();
-    const timezoneName = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    return `${localTime.format('MMMM D, YYYY h:mm A')} (${timezoneName})`;
+    const zoneName = moment.tz(moment.tz.guess()).zoneAbbr();
+    return `${localTime.format('MMMM D, YYYY h:mm A')} (${zoneName})`;
   };
 
   const canEdit = user?.id === reservation?.user_id && 
@@ -66,6 +67,47 @@ export const ReservationDetailsOffcanvas: React.FC<Props> = ({
     }
   };
 
+  const renderParticipants = () => {
+    // Solo reservation
+    if (!reservation?.participants || reservation.participants.length === 0) {
+      return (
+        <div className="d-flex gap-2 align-items-center">
+          <Badge bg="success" className="rounded-pill">
+            <i className="fas fa-user me-1"></i>Solo
+          </Badge>
+        </div>
+      );
+    }
+  
+    // Group reservation
+    return (
+      <div className="d-flex gap-2 align-items-center">
+        <Badge 
+          bg={reservation.user_id === user?.id ? "primary" : "secondary"}
+          className="rounded-pill"
+          style={{ fontSize: '0.75em' }}
+        >
+          <i className="fas fa-users me-1"></i>
+          {reservation.user_id === user?.id ? 'Owner' : 'Guest'}
+        </Badge>
+        <div className="d-flex gap-2 flex-wrap">
+          {reservation.participants.map((email, index) => (
+            <Badge
+              key={index}
+              bg="info"
+              text="dark"
+              className="rounded-pill"
+              style={{ fontSize: '0.75em', fontWeight: 'normal' }}
+              title={email}
+            >
+              {email.split('@')[0]}
+            </Badge>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       <Offcanvas show={show} onHide={onHide} placement="end">
@@ -80,54 +122,53 @@ export const ReservationDetailsOffcanvas: React.FC<Props> = ({
           <div>
             <h5>{reservation?.title}</h5>
             <p className="text-muted">{reservation?.description}</p>
-            <p>
-              <i className="fas fa-clock me-2"></i>
-              {formatDateTime(reservation?.start_time)} - 
-              {formatDateTime(reservation?.end_time)}
-            </p>
+            
+            {/* Info sections container */}
+            <div className="border rounded overflow-hidden">
+              {/* Who section */}
+              <div className="d-flex flex-column flex-md-row p-3 border-bottom">
+                <div className="mb-2 mb-md-0 text-muted" style={{ minWidth: '80px' }}>
+                  <i className="fas fa-users me-1"></i>Who:
+                </div>
+                <div className="flex-grow-1">
+                  {renderParticipants()}
+                </div>
+              </div>
 
-            {/* Only show site if available */}
-            {reservation?.resources?.sites && (
-              <p>
-                <i className="fas fa-map-marker-alt me-2"></i>
-                <Button 
-                  variant="link" 
-                  className="p-0" 
-                  onClick={() => onSiteClick?.(reservation.resources.sites)}
-                >
-                  {reservation.resources.sites.name}
-                </Button>
-              </p>
-            )}
+              {/* Where section */}
+              <div className="d-flex flex-column flex-md-row p-3 border-bottom">
+                <div className="mb-2 mb-md-0 text-muted" style={{ minWidth: '80px' }}>
+                  <i className="fas fa-location-dot me-1"></i>Where:
+                </div>
+                <div className="flex-grow-1">
+                  {reservation?.resources?.name && (
+                    <Button variant="link" className="p-0" onClick={() => onResourceClick?.(reservation.resources)}>
+                      <i className="fas fa-box me-1"></i>{reservation.resources.name}
+                    </Button>
+                  )}
+                  {reservation?.resources?.sites?.name && (
+                    <>
+                      {" at "}
+                      <Button variant="link" className="p-0" onClick={() => onSiteClick?.(reservation.resources.sites)}>
+                        <i className="fas fa-building me-1"></i>{reservation.resources.sites.name}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
 
-            {/* Only show resource if available */}
-            {reservation?.resources && (
-              <p>
-                <i className="fas fa-box me-2"></i>
-                <Button 
-                  variant="link" 
-                  className="p-0" 
-                  onClick={() => onResourceClick?.(reservation.resources)}
-                >
-                  {reservation.resources.name}
-                </Button>
-              </p>
-            )}
+              {/* When section */}
+              <div className="d-flex flex-column flex-md-row p-3">
+                <div className="mb-2 mb-md-0 text-muted" style={{ minWidth: '80px' }}>
+                  <i className="fas fa-clock me-1"></i>When:
+                </div>
+                <div className="flex-grow-1">
+                  <div>{formatDateTime(reservation?.start_time)}</div>
+                  <div>{formatDateTime(reservation?.end_time)}</div>
+                </div>
+              </div>
+            </div>
 
-            {/* Always show participants since they're on the reservation itself */}
-            <p>
-              <i className="fas fa-users me-2"></i>Participants:
-              {reservation?.participants?.map((email, index) => (
-                <Badge 
-                  key={index} 
-                  bg="info" 
-                  text="dark" 
-                  className="ms-2 rounded-pill"
-                >
-                  {email}
-                </Badge>
-              ))}
-            </p>
           </div>
         </Offcanvas.Body>
         <div className="border-top mx-n3 px-3 py-3 mt-auto">

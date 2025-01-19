@@ -30,10 +30,11 @@ interface Reservation {
 }
 
 // DateTime utility functions
-const formatLocalDateTime = (utcDateTime: string) => {
-  const localTime = moment.utc(utcDateTime).local();
-  const timezoneName = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  return `${localTime.format('MMMM D, YYYY h:mm A')} (${timezoneName})`;
+const formatLocalDateTime = (dateTime: string) => {
+  if (!dateTime) return '';
+  const localTime = moment.utc(dateTime).local();
+  const zoneName = moment.tz(moment.tz.guess()).zoneAbbr();
+  return `${localTime.format('MMMM D, YYYY h:mm A')} (${zoneName})`;
 };
 
 const MyReservations: React.FC = () => {
