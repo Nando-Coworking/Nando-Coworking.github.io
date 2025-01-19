@@ -7,10 +7,10 @@ import { Form, Container, Row, Col } from 'react-bootstrap';
 import '../styles/react-big-calendar.css';  // Update this import path
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient'; // Add this import
-import { ResourceDetailsOffcanvas } from '../components/ResourceDetailsOffcanvas'; // Add this import
+import { ResourceDetailsOffcanvas } from '../components/Resources/ResourceDetailsOffcanvas'; // Add this import
 import { ReservationDetailsOffcanvas } from '../components/ReservationDetailsOffcanvas'; // Add this import
 import { useAuth } from '../AuthContext';
-import { ReservationCreateForm } from '../components/ReservationCreateForm';
+import { ReservationCreateForm } from '../components/Reservations/ReservationCreateForm';
 import { useToast } from '../ToastContext';
 
 interface Site {

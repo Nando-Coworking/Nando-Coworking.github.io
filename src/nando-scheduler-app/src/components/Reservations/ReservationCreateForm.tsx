@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Offcanvas, Form, Button } from 'react-bootstrap';
-import { supabase } from '../supabaseClient';
-import { useToast } from '../ToastContext';
-import { useAuth } from '../AuthContext';
+import { supabase } from '../../supabaseClient';
+import { useToast } from '../../ToastContext';
+import { useAuth } from '../../AuthContext';
 import moment from 'moment';
 
 interface Props {

@@ -1,7 +1,7 @@
 // src/components/TeamDeleteConfirmation.tsx
 import React from 'react';
 import { Offcanvas, ListGroup, Badge, Alert, Button } from 'react-bootstrap';
-import { TeamUser } from '../types/team';
+import { TeamUser } from '../../types/team';
 
 interface Props {
     show: boolean;

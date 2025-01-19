@@ -1,6 +1,6 @@
 import React from 'react';
 import { Offcanvas, Alert, Button } from 'react-bootstrap';
-import { Resource } from '../types/resource';
+import { Resource } from '../../types/resource';
 
 interface Props {
     show: boolean;

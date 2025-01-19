@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Offcanvas, Form, Button, Spinner, Badge } from 'react-bootstrap';
-import { supabase } from '../supabaseClient';
-import { useToast } from '../ToastContext';
-import { useAuth } from '../AuthContext';
+import { supabase } from '../../supabaseClient';
+import { useToast } from '../../ToastContext';
+import { useAuth } from '../../AuthContext';
 // Import timezone support
 import moment from 'moment-timezone';
 import { ReservationEditForm } from './ReservationEditForm';

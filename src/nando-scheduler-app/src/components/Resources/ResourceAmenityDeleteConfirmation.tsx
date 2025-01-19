@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Offcanvas, Button, Alert } from 'react-bootstrap';
-import { supabase } from '../supabaseClient';
-import { useToast } from '../ToastContext';
-import { ResourceAmenity } from '../types/resourceamenity';
+import { supabase } from '../../supabaseClient';
+import { useToast } from '../../ToastContext';
+import { ResourceAmenity } from '../../types/resourceamenity';
 
 interface Props {
     show: boolean;

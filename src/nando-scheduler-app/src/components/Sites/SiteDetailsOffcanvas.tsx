@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Offcanvas, ListGroup, Button, Badge } from 'react-bootstrap';
-import { supabase } from '../supabaseClient';
-import { useToast } from '../ToastContext';
-import { Site } from '../types/site';
-import { Resource } from '../types/resource';
-import { ResourceAddForm } from './ResourceAddForm';
-import { ResourceEditForm } from './ResourceEditForm';
-import { ResourceDetailsOffcanvas } from './ResourceDetailsOffcanvas'; // Import the new component
-import { TeamEditSite } from './TeamEditSite';
+import { supabase } from '../../supabaseClient';
+import { useToast } from '../../ToastContext';
+import { Site } from '../../types/site';
+import { Resource } from '../../types/resource';
+import { ResourceAddForm } from '../Resources/ResourceAddForm';
+import { ResourceEditForm } from '../Resources/ResourceEditForm';
+import { ResourceDetailsOffcanvas } from '../Resources/ResourceDetailsOffcanvas'; // Import the new component
+import { SiteEdit } from './SiteEdit';
 
 interface Props {
   show: boolean;
@@ -263,7 +263,7 @@ export const SiteDetailsOffcanvas: React.FC<Props> = ({
         }}
       />
 
-      <TeamEditSite
+      <SiteEditor
         show={showEditForm}
         onHide={() => setShowEditForm(false)}
         site={site}

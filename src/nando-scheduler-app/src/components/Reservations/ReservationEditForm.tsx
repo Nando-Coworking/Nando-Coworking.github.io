@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Offcanvas, Form, Button, Badge } from 'react-bootstrap';
-import { supabase } from '../supabaseClient';
-import { useToast } from '../ToastContext';
+import { supabase } from '../../supabaseClient';
+import { useToast } from '../../ToastContext';
 import moment from 'moment-timezone';
-import { Reservation } from '../types/reservation';
+import { Reservation } from '../../types/reservation';
 
 interface Props {
   show: boolean;

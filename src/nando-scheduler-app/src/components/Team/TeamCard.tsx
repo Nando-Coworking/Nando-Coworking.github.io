@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Badge, Button } from 'react-bootstrap';
-import { Team } from '../types/team';
+import { Team } from '../../types/team';
 
 interface TeamCardProps {
   team: Team;

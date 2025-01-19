@@ -6,8 +6,8 @@ import { useToast } from '../ToastContext';
 import { Site } from '../types/site';
 import { TeamAddSite } from '../components/TeamAddSite';
 import { TeamEditSite } from '../components/TeamEditSite';
-import { SiteCard } from '../components/SiteCard';
-import { SiteDetailsOffcanvas } from '../components/SiteDetailsOffcanvas';
+import { SiteCard } from '../components/Sites/SiteCard';
+import { SiteDetailsOffcanvas } from '../components/Sites/SiteDetailsOffcanvas';
 
 const Sites: React.FC = () => {
   const { user } = useAuth();

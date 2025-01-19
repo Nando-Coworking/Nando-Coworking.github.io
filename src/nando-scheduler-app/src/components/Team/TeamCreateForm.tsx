@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Form, Button, Offcanvas } from 'react-bootstrap';
-import { supabase } from '../supabaseClient';
-import { useToast } from '../ToastContext';
+import { supabase } from '../../supabaseClient';
+import { useToast } from '../../ToastContext';
 
 interface Props {
   show: boolean;

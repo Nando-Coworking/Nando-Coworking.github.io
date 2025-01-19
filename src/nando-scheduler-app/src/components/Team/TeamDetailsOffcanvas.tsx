@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Offcanvas, Form, Button, ListGroup, Badge } from 'react-bootstrap';
-import { Team, TeamUser } from '../types/team';
-import { supabase } from '../supabaseClient';
-import { useAuth } from '../AuthContext';
-import { useToast } from '../ToastContext';
+import { Team, TeamUser } from '../../types/team';
+import { supabase } from '../../supabaseClient';
+import { useAuth } from '../../AuthContext';
+import { useToast } from '../../ToastContext';
 import { TeamMemberEdit } from './TeamMemberEdit';
-import { Site } from '../types/site';
-import { SiteDetailsOffcanvas } from './SiteDetailsOffcanvas';
+import { Site } from '../../types/site';
+import { SiteDetailsOffcanvas } from '../Sites/SiteDetailsOffcanvas';
 
 interface Props {
     show: boolean;

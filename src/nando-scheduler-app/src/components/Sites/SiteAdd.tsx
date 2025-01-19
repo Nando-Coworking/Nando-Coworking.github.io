@@ -12,7 +12,7 @@ interface Props {
     onSiteAdded: () => void;
 }
 
-export const TeamAddSite: React.FC<Props> = ({
+export const SiteAdd: React.FC<Props> = ({
     show,
     onHide,
     team,

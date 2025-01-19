@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Offcanvas, Form, Button, Alert } from 'react-bootstrap';
-import { supabase } from '../supabaseClient';
-import { useToast } from '../ToastContext';
-import { Resource } from '../types/resource';
+import { supabase } from '../../supabaseClient';
+import { useToast } from '../../ToastContext';
+import { Resource } from '../../types/resource';
 import { ResourceDeleteConfirmation } from './ResourceDeleteConfirmation';
 
 interface Props {

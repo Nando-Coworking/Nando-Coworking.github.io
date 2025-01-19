@@ -6,11 +6,11 @@ import { supabase } from '../supabaseClient';
 import { Site } from '../types/site';
 import { Resource } from '../types/resource';
 import { Team } from '../types/team';
-import { SiteDetailsOffcanvas } from '../components/SiteDetailsOffcanvas';
-import { ResourceDetailsOffcanvas } from '../components/ResourceDetailsOffcanvas';
-import { TeamDetailsOffcanvas } from '../components/TeamDetailsOffcanvas';
+import { SiteDetailsOffcanvas } from '../components/Sites/SiteDetailsOffcanvas';
+import { ResourceDetailsOffcanvas } from '../components/Resources/ResourceDetailsOffcanvas';
+import { TeamDetailsOffcanvas } from '../components/Team/TeamDetailsOffcanvas';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ReservationCreateForm } from '../components/ReservationCreateForm';
+import { ReservationCreateForm } from '../components/Reservations/ReservationCreateForm';
 import { ReservationDetailsOffcanvas } from '../components/ReservationDetailsOffcanvas';
 import { useAuth } from '../AuthContext';
 

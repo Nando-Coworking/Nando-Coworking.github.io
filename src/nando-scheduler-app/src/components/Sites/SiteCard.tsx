@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Button, Badge } from 'react-bootstrap';
-import { Site } from '../types/site';
+import { Site } from '../../types/site';
 
 interface Props {
     site: Site;

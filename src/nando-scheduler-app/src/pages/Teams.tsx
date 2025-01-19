@@ -3,15 +3,15 @@ import { Container, Button, Card, Badge, Offcanvas, Form, ListGroup, Alert } fro
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../AuthContext';
 import { useToast } from '../ToastContext';
-import { TeamCard } from '../components/TeamCard';
-import { TeamDeleteConfirmation } from '../components/TeamDeleteConfirmation';
-import { TeamCreateForm } from '../components/TeamCreateForm';
-import { TeamAddMember } from '../components/TeamAddMember';
-import { TeamDetailsOffcanvas } from '../components/TeamDetailsOffcanvas';
-import { TeamEditForm } from '../components/TeamEditForm';
-import { TeamLeaveConfirmation } from '../components/TeamLeaveConfirmation';
-import { TeamAddSite } from '../components/TeamAddSite';
-import { TeamEditSite } from '../components/TeamEditSite';
+import { TeamCard } from '../components/Team/TeamCard';
+import { TeamDeleteConfirmation } from '../components/Team/TeamDeleteConfirmation';
+import { TeamCreateForm } from '../components/Team/TeamCreateForm';
+import { TeamAddMember } from '../components/Team/TeamAddMember';
+import { TeamDetailsOffcanvas } from '../components/Team/TeamDetailsOffcanvas';
+import { TeamEditForm } from '../components/Team/TeamEditForm';
+import { TeamLeaveConfirmation } from '../components/Team/TeamLeaveConfirmation';
+import { SiteAdd } from '../components/Sites/SiteAdd';
+import { SiteEdit } from '../components/Sites/SiteEdit';
 
 interface Team {
   id: string;
@@ -535,7 +535,7 @@ const Teams: React.FC = () => {
         onConfirmLeave={handleLeaveTeam}
       />
 
-      <TeamAddSite
+      <SiteAdd
         show={showAddSite}
         onHide={() => setShowAddSite(false)}
         team={selectedTeam}
@@ -544,7 +544,7 @@ const Teams: React.FC = () => {
         }}
       />
 
-      <TeamEditSite
+      <SiteEdit
           show={showEditSite}
           onHide={() => setShowEditSite(false)}
           site={selectedSite}

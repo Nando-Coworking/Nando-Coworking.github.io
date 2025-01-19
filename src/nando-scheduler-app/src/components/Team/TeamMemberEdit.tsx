@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Offcanvas, Form, Button, Alert, Badge } from 'react-bootstrap';
-import { TeamUser } from '../types/team';
+import { TeamUser } from '../../types/team';
 
 interface Props {
     show: boolean;

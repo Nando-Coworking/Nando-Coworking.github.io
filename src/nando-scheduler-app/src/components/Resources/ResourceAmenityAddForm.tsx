@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Offcanvas, Form, Button, ListGroup } from 'react-bootstrap';
-import { supabase } from '../supabaseClient';
-import { useToast } from '../ToastContext';
+import { supabase } from '../../supabaseClient';
+import { useToast } from '../../ToastContext';
 
 interface Amenity {
     id: string;
