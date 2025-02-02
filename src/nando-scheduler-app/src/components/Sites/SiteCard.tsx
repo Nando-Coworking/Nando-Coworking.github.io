@@ -12,7 +12,7 @@ export const SiteCard: React.FC<Props> = ({ site, onManage, userRole }) => {
     const canManage = ['owner', 'admin'].includes(userRole || '');
 
     return (
-        <Card className="h-100">
+        <Card className="h-100 shadow">
             <Card.Body className="d-flex flex-column">
                 <Card.Title className="d-flex justify-content-between">
                     {site.name}

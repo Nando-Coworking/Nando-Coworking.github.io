@@ -180,7 +180,7 @@ const MyReservations: React.FC = () => {
     const end = formatLocalDateTime(reservation.end_time);
     
     return (
-      <ListGroup.Item key={reservation.id}>
+      <ListGroup.Item key={reservation.id} className="shadow">
         <div 
           role="button" 
           onClick={() => {

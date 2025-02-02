@@ -9,7 +9,7 @@ interface TeamCardProps {
 
 export const TeamCard: React.FC<TeamCardProps> = ({ team, onManage }) => {
   return (
-    <Card className="h-100">
+    <Card className="h-100 shadow">
       <Card.Body className="d-flex flex-column">
         <Card.Title className="d-flex justify-content-between">
           {team.name}

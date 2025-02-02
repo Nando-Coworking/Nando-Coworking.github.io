@@ -18,13 +18,13 @@ export default function Home() {
         <img
           src="https://picsum.photos/800/400.jpg?random=1"
           alt="Coworking space"
-          className="img-fluid rounded"
+          className="img-fluid rounded shadow"
         />
       </section>
 
       <Row className="g-4">
         <Col md={4}>
-          <Card className="h-100">
+          <Card className="h-100 shadow">
             <Card.Body>
               <Card.Title>
                 <i className="fa-solid fa-users me-2"></i>
@@ -40,7 +40,7 @@ export default function Home() {
           </Card>
         </Col>
         <Col md={4}>
-          <Card className="h-100">
+          <Card className="h-100 shadow">
             <Card.Body>
               <Card.Title>
                 <i className="fa-solid fa-shield me-2"></i>
@@ -56,7 +56,7 @@ export default function Home() {
           </Card>
         </Col>
         <Col md={4}>
-          <Card className="h-100">
+          <Card className="h-100 shadow">
             <Card.Body>
               <Card.Title>
                 <i className="fa-solid fa-person-running me-2"></i>

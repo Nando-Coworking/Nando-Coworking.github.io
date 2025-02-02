@@ -393,7 +393,7 @@ const [selectedSite, setSelectedSite] = useState<Site | null>(null);
 
       <Row>
         <Col xs={12}>
-          <Calendar
+          <Calendar className="shadow"
             localizer={localizer}
             events={events}
             startAccessor="start"

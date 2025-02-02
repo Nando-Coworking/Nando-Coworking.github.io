@@ -16,7 +16,7 @@ const About: React.FC = () => {
         </h3>
         <div className="row">
           <div className="col-md-6 mb-4">
-            <div className="card">
+            <div className="card shadow">
               <div className="card-body">
                 <h4 className="card-title">
                   <i className="fas fa-users-gear me-2"></i>Teams & Members
@@ -33,7 +33,7 @@ const About: React.FC = () => {
             </div>
           </div>
           <div className="col-md-6 mb-4">
-            <div className="card">
+            <div className="card shadow">
               <div className="card-body">
                 <h4 className="card-title">
                   <i className="fas fa-building me-2"></i>Create Sites
@@ -50,7 +50,7 @@ const About: React.FC = () => {
             </div>
           </div>
           <div className="col-md-6 mb-4">
-            <div className="card">
+            <div className="card shadow">
               <div className="card-body">
                 <h4 className="card-title">
                   <i className="fas fa-box me-2"></i>Add Resources
@@ -67,7 +67,7 @@ const About: React.FC = () => {
             </div>
           </div>
           <div className="col-md-6 mb-4">
-            <div className="card">
+            <div className="card shadow">
               <div className="card-body">
                 <h4 className="card-title">
                   <i className="fas fa-list-check me-2"></i>Resource Amenities
@@ -93,7 +93,7 @@ const About: React.FC = () => {
         </h3>
         <div className="row">
           <div className="col-md-6 mb-4">
-            <div className="card" style={{ padding: '1rem' }}>
+            <div className="card shadow" style={{ padding: '1rem' }}>
               <h4><i className="fa fa-bullseye" aria-hidden="true"></i> Our Mission</h4>
               <p>
                 At Nando Coworking, we synergize cutting-edge solutions to empower
@@ -104,7 +104,7 @@ const About: React.FC = () => {
             </div>
           </div>
           <div className="col-md-6 mb-4">
-            <div className="card" style={{ padding: '1rem' }}>
+            <div className="card shadow" style={{ padding: '1rem' }}>
               <h4><i className="fa fa-cogs" aria-hidden="true"></i> Core Competencies</h4>
               <p>
                 Our core competencies include fostering a culture of excellence,
@@ -115,7 +115,7 @@ const About: React.FC = () => {
             </div>
           </div>
           <div className="col-md-6 mb-4">
-            <div className="card" style={{ padding: '1rem' }}>
+            <div className="card shadow" style={{ padding: '1rem' }}>
               <h4><i className="fa-solid fa-lightbulb" aria-hidden="true"></i> Innovative Approach</h4>
               <p>
                 By harnessing the power of disruptive technologies and agile
@@ -126,7 +126,7 @@ const About: React.FC = () => {
             </div>
           </div>
           <div className="col-md-6 mb-4">
-            <div className="card" style={{ padding: '1rem' }}>
+            <div className="card shadow" style={{ padding: '1rem' }}>
               <h4><i className="fa-solid fa-handshake" aria-hidden="true"></i> Strategic Partnerships</h4>
               <p>
                 We believe in the transformative potential of strategic partnerships
